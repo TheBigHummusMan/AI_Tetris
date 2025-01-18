@@ -206,11 +206,18 @@ def draw_next_shape(shape, surface):
 
 
 
+def draw_text_middle_up(surface, text, size, color):
+    font = pygame.font.SysFont('Tahoma', size, bold = True)
+    label = font.render(text, 1, color)
+
+    surface.blit(label, (top_left_x + play_width/2 - (label.get_width()/2), top_left_y + play_height/2 - (label.get_height()/2) - 250))
+
 def draw_text_middle(surface, text, size, color):
     font = pygame.font.SysFont('Tahoma', size, bold = True)
     label = font.render(text, 1, color)
 
     surface.blit(label, (top_left_x + play_width/2 - (label.get_width()/2), top_left_y + play_height/2 - (label.get_height()/2)))
+
 
 
 def clear_rows(grid, locked):
@@ -454,16 +461,58 @@ def main(win):
 
 def main_menu(win):
     run = True
+
+    font = pygame.font.SysFont('Tahoma', 40, bold = True)
+    # Define button dimensions for "PLAY"
+    play_label = font.render("PLAY", 1, (255, 255, 255))
+    play_x = top_left_x + play_width / 2 - (play_label.get_width() / 2)
+    play_y = top_left_y + play_height / 2 - (play_label.get_height() / 2) - 100
+    play_button = pygame.Rect(play_x - 20, play_y - 10, play_label.get_width() + 40, play_label.get_height() + 20)
+
+    # Define button dimensions for "CHECK AI LOGS" (optional)
+    ai_label = font.render("CHECK AI LOGS", 1, (255, 255, 255))
+    ai_x = top_left_x + play_width / 2 - (ai_label.get_width() / 2)
+    ai_y = top_left_y + play_height / 2 - (ai_label.get_height() / 2) - 25
+    ai_button = pygame.Rect(ai_x - 20, ai_y - 10, ai_label.get_width() + 40, ai_label.get_height() + 20)
+
     while run:
         win.fill((0, 0, 0))
-        draw_text_middle(win, 'Press any key to play', 60, (255, 255, 255))
+        draw_text_middle_up(win, 'Welcome to TETRIS', 60, (255, 255, 255))
+        
+       # Draw buttons
+        pygame.draw.rect(win, (50, 50, 50), play_button)  # Play button background
+        win.blit(play_label, (play_x, play_y))            # Play button text
+
+        pygame.draw.rect(win, (50, 50, 50), ai_button)    # AI Logs button background
+        win.blit(ai_label, (ai_x, ai_y))                  # AI Logs button text
+
+        pygame.display.update()
+
+
+
+        mouse_pos = pygame.mouse.get_pos()  # Get mouse position
+
+        # Check if the mouse is over the "PLAY" button and change the cursor
+        if play_button.collidepoint(mouse_pos):
+            pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_HAND)  # Hand cursor
+        elif ai_button.collidepoint(mouse_pos):
+            pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_HAND)  # Hand cursor
+        else:
+            pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_ARROW)  # Default arrow cursor
+
+
+
         pygame.display.update()
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 run = False
             
-            if event.type == pygame.KEYDOWN:
-                main(win)
+            if event.type == pygame.MOUSEBUTTONDOWN:  # Check for mouse click
+                mouse_pos = pygame.mouse.get_pos()  # Get mouse position
+                if play_button.collidepoint(mouse_pos):  # Check if "PLAY" button is clicked
+                    main(win)  # Start the game
+                elif ai_button.collidepoint(mouse_pos):  # Check if "CHECK AI LOGS" button is clicked
+                    print("AI Logs button clicked!")  # Placeholder for AI Logs functionality
     
     pygame.display.quit()
     
