@@ -218,6 +218,8 @@ def convert_shape_format(shape):
         # We offset the position so it displays correctly
         positions[i] = (pos[0] - 2, pos[1] - 4)
 
+    return positions
+
 def valid_space(shape, grid):
     # only a valid position if the position is blank
     accepted_pos = [[(j, i) for j in range(10) if grid[i][j] == (0, 0, 0)] for i in range(20)]
@@ -268,7 +270,7 @@ def draw_window(surface, grid):
             # We draw the color (grid[i][j]) onto the surface, at the position we want
             # toplefty + i*block_size is the true 'y' position, same thing for 'x'
             # We then specify, the width and length of drawing, and the '0' means we fill the square (not a border)
-            pygame.draw.rect(surface, grid[i][j], (top_left_x + j*block_size, top_left_y + i*block_size), block_size, block_size, 0)
+            pygame.draw.rect(surface, grid[i][j], (top_left_x + j*block_size, top_left_y + i*block_size, block_size, block_size), 0)
     
     
     pygame.draw.rect(surface, (255, 0, 0), (top_left_x, top_left_y, play_width, play_height), 4)
