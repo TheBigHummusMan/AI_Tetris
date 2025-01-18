@@ -187,6 +187,61 @@ def create_grid(locked_positions = {}):
 def get_shape(): 
     return Piece(5, 0,random.choice(shapes_list))
 
+def draw_next_shape(shape, surface):
+    font = pygame.font.SysFont('Tahoma', 30)
+    label = font.render('Next Shape:', 1, (255, 255, 255))
+
+    sx = top_left_x + play_width + 50
+    sy = top_left_y + play_height/2 - 100
+
+    format = shape.shape[shape.rotation % len(shape.shape)]
+
+    for i, line in enumerate(format):
+        row = list(line)
+        for j, column in enumerate(row):
+            if column == '0':
+                pygame.draw.rect(surface, shape.color, (sx + j*block_size, sy + i*block_size, block_size, block_size), 0)
+
+    surface.blit(label, (sx + 10, sy - 30))
+
+
+
+def clear_rows(grid, locked):
+
+    inc = 0
+    for i in range(len(grid) - 1, -1, -1):
+        row = grid[i]
+
+        # If (0,0,0) doesnt exist then the row is full of coloured cubes
+        if (0, 0, 0) not in row:
+            inc += 1
+            ind = i
+
+            # Go through each square in the row and delete them
+            for j in range(len(row)):
+                try: 
+                    del locked[(j, i)]
+                except:
+                    continue
+    
+
+    # If there was a row deleted, then we move all the rows down
+    if inc > 0:
+
+        # We sort the list of locked keys, sorted by their y values
+        for key in sorted(list(locked), key = lambda x: x[1])[::-1]:
+            x, y = key
+
+            # If a square higher than a deleted row, then we need to move it down
+            if y < ind:
+
+                # Creates a new square, inc spots lower than it was before
+                newKey = (x, y + inc)
+
+                # This replaces the old square with the new one in the locked positions dictionary
+                locked[newKey] = locked.pop(key)
+
+
 
 def check_lost(positions):
     for pos in positions:
@@ -275,9 +330,8 @@ def draw_window(surface, grid):
     
     pygame.draw.rect(surface, (255, 0, 0), (top_left_x, top_left_y, play_width, play_height), 4)
 
-
     draw_grid(surface, grid)
-    pygame.display.update()
+
 
 
 def main(win):
@@ -355,7 +409,13 @@ def main(win):
             next_piece = get_shape()
             change_piece = False
 
+            clear_rows(grid, locked_positions)
+
+        
+
         draw_window(win, grid)
+        draw_next_shape(next_piece, win)
+        pygame.display.update()
 
         if check_lost(locked_positions):
             run = False
