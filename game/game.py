@@ -417,6 +417,9 @@ def main(win):
                 run = False
 
             if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    run = False
+                    print("break")
                 if event.key == pygame.K_LEFT:
                     current_piece.x -= 1
                     if not(valid_space(current_piece, grid)):
@@ -436,6 +439,7 @@ def main(win):
                         current_piece.rotation += 1
                         if not(valid_space(current_piece, grid)):
                             current_piece.rotation -= 1
+                
         
         shape_pos = convert_shape_format(current_piece)
 
@@ -524,6 +528,7 @@ def main_menu(win):
                     main(win)  # Start the game
                 elif ai_button.collidepoint(mouse_pos):  # Check if "CHECK AI LOGS" button is clicked
                     print("AI Logs button clicked!")  # Placeholder for AI Logs functionality
+            
     
     pygame.display.quit()
     
