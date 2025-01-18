@@ -47,6 +47,12 @@ block_size = 30
 top_left_x = (screen_width - play_width) // 2
 top_left_y = screen_height - play_height
 
+warning_image_location = 'game/images/warning_image.png'
+alarm_audio_location = 'game/audio/alarm_audio.mp3'
+warning_border_width = 20
+warning_visible = False
+user_inactive = False
+user_ignored_warnings = False
 
 # SHAPE FORMATS IN BOTH OF THEIR POSSIBLE ROTATIONS -------
 S = [['.....',
@@ -332,9 +338,6 @@ def draw_grid(surface, grid):
             pygame.draw.line(surface, (128, 128, 128), (sx + j*block_size, sy), (sx + j*block_size, sy+play_height))
 
 
-
-
-
 def draw_window(surface, grid, score=0):
     surface.fill((0, 0, 0))
 
@@ -369,6 +372,41 @@ def draw_window(surface, grid, score=0):
 
 
 
+def display_warning(surface, image_location):
+    global warning_visible
+
+    if warning_visible:
+        im = pygame.image.load(image_location)
+        im = pygame.transform.scale(im, (100, 100))
+        surface.blit(im, (screen_width - play_width + 60, screen_height - play_height))
+        surface.blit(im, (screen_width - (2*play_width) - 60, screen_height - play_height))
+        
+        # Top Border
+        pygame.draw.rect(surface, (255, 0, 0), (0, 0, screen_width, warning_border_width))
+        # Bottom border
+        pygame.draw.rect(surface, (255, 0, 0), (0, screen_height - warning_border_width, screen_width, warning_border_width))
+        # Left border
+        pygame.draw.rect(surface, (255, 0, 0), (0, 0, warning_border_width, screen_height))
+        # Right border
+        pygame.draw.rect(surface, (255, 0, 0), (screen_width - warning_border_width, 0, warning_border_width, screen_height))
+
+
+        pygame.draw.rect(surface, (50, 50, 50), (0, (screen_height//2) + 25, 1000, 50))
+        draw_text_middle(win, "WARNING, COME BACK TO GAME", 40, (255, 0, 0))
+
+# Function to stop the warning (remove red borders and images)
+def stop_warning():
+    global warning_visible
+    warning_visible = False
+
+def sound_alarm(audio_location):
+    pygame.mixer.init()
+    pygame.mixer.music.load(audio_location)
+    pygame.mixer.music.play()
+
+def stop_alarm():
+    pygame.mixer.music.stop()
+
 def main(win):
     
     # We start with no locked positions
@@ -389,6 +427,9 @@ def main(win):
     level_time = 0
     score = 0
 
+    # if the user ignores the warnings, we sound the alarms
+    if (user_ignored_warnings):
+        sound_alarm(alarm_audio_location)
 
     run = True
     
@@ -398,6 +439,7 @@ def main(win):
         fall_time += clock.get_rawtime()
         level_time += clock.get_rawtime()
         clock.tick()
+        
 
         if level_time/1000 > 5:
             level_time = 0
@@ -440,6 +482,21 @@ def main(win):
                         if not(valid_space(current_piece, grid)):
                             current_piece.rotation -= 1
                 
+                if event.key == pygame.K_1:
+                    global warning_visible
+                    warning_visible = True
+                    display_warning(win, warning_image_location)
+
+                if event.key == pygame.K_2:
+                    stop_warning()
+                if event.key == pygame.K_9:
+                    sound_alarm(alarm_audio_location)
+                if event.key == pygame.K_0:
+                    stop_alarm()
+
+
+
+                
         
         shape_pos = convert_shape_format(current_piece)
 
@@ -461,11 +518,16 @@ def main(win):
             score += clear_rows(grid, locked_positions) * 10
 
         
-
         draw_window(win, grid, score)
         draw_next_shape(next_piece, win)
-        pygame.display.update()
+            
+            
 
+
+        pygame.display.flip()
+
+        # every iteration, we check if the user has lost the game
+        # if he loses, we end the game and display GAME OVER
         if check_lost(locked_positions):
             draw_text_middle(win, "GAME OVER", 80, (255, 255, 255))
             pygame.display.update()
