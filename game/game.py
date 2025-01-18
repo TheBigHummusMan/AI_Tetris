@@ -206,6 +206,13 @@ def draw_next_shape(shape, surface):
 
 
 
+def draw_text_middle(surface, text, size, color):
+    font = pygame.font.SysFont('Tahoma', size, bold = True)
+    label = font.render(text, 1, color)
+
+    surface.blit(label, (top_left_x + play_width/2 - (label.get_width()/2), top_left_y + play_height/2 - (label.get_height()/2)))
+
+
 def clear_rows(grid, locked):
 
     inc = 0
@@ -240,6 +247,8 @@ def clear_rows(grid, locked):
 
                 # This replaces the old square with the new one in the locked positions dictionary
                 locked[newKey] = locked.pop(key)
+    
+    return inc
 
 
 
@@ -308,7 +317,7 @@ def draw_grid(surface, grid):
 
 
 
-def draw_window(surface, grid):
+def draw_window(surface, grid, score=0):
     surface.fill((0, 0, 0))
 
     pygame.font.init()
@@ -319,6 +328,14 @@ def draw_window(surface, grid):
     # The 30 at the end moves the label down 30 from the top 
     surface.blit(label, (top_left_x + play_width/2 - (label.get_width()/2), 30))
 
+    # current score
+    font = pygame.font.SysFont('Tahoma', 30)
+    label = font.render('Score: ' + str(score), 1, (255, 255, 255))
+
+    sx = top_left_x + play_width + 50
+    sy = top_left_y + play_height/2 - 100
+
+    surface.blit(label, (sx + 50, sy - 280))
 
     for i in range(len(grid)):
         for j in range(len(grid[i])):
@@ -350,15 +367,24 @@ def main(win):
     next_piece = get_shape()
     clock = pygame.time.Clock()
     fall_time = 0
-    fall_speed = 0.27
+    fall_speed = 0.3
+    level_time = 0
+    score = 0
 
 
     run = True
     
     while run:
+
         grid = create_grid(locked_positions)
         fall_time += clock.get_rawtime()
+        level_time += clock.get_rawtime()
         clock.tick()
+
+        if level_time/1000 > 5:
+            level_time = 0
+            if fall_speed > 0.12:
+                fall_speed -= 0.005
 
         if fall_time/1000 > fall_speed:
             fall_time = 0
@@ -409,22 +435,37 @@ def main(win):
             next_piece = get_shape()
             change_piece = False
 
-            clear_rows(grid, locked_positions)
+            # 10 points per row cleared
+            score += clear_rows(grid, locked_positions) * 10
 
         
 
-        draw_window(win, grid)
+        draw_window(win, grid, score)
         draw_next_shape(next_piece, win)
         pygame.display.update()
 
         if check_lost(locked_positions):
+            draw_text_middle(win, "GAME OVER", 80, (255, 255, 255))
+            pygame.display.update()
+            pygame.time.delay(2000)
             run = False
-    
-    pygame.display.quit()
+
 
 
 def main_menu(win):
-    main(win)
+    run = True
+    while run:
+        win.fill((0, 0, 0))
+        draw_text_middle(win, 'Press any key to play', 60, (255, 255, 255))
+        pygame.display.update()
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                run = False
+            
+            if event.type == pygame.KEYDOWN:
+                main(win)
+    
+    pygame.display.quit()
     
 
 win = pygame.display.set_mode((screen_width, screen_height))
