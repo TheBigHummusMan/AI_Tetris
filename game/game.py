@@ -211,30 +211,41 @@ def get_shape():
     return Piece(5, 0,random.choice(shapes_list))
 
 def draw_next_shape(shape, surface):
+    # Create a font object to render the 'Next Shape:' label
     font = pygame.font.SysFont('Tahoma', 30)
+    # Render the 'Next Shape:' label with white color
     label = font.render('Next Shape:', 1, (255, 255, 255))
 
+    # Calculate the x and y coordinates to draw the next shape
     sx = top_left_x + play_width + 50
     sy = top_left_y + play_height/2 - 100
 
+    # Get the current shape format based on its rotation
     format = shape.shape[shape.rotation % len(shape.shape)]
 
+    # Iterate over each line in the shape format
     for i, line in enumerate(format):
+        # Convert the line to a list of characters
         row = list(line)
+        # Iterate over each character in the line
         for j, column in enumerate(row):
+            # If the character is '0', draw a rectangle at the corresponding position
             if column == '0':
                 pygame.draw.rect(surface, shape.color, (sx + j*block_size, sy + i*block_size, block_size, block_size), 0)
 
+    # Draw the 'Next Shape:' label at the calculated position
     surface.blit(label, (sx + 10, sy - 30))
 
 
-
+# Method to write text in the upper middle section of the window
 def draw_text_middle_up(surface, text, size, color):
     font = pygame.font.SysFont('Tahoma', size, bold = True)
     label = font.render(text, 1, color)
 
     surface.blit(label, (top_left_x + play_width/2 - (label.get_width()/2), top_left_y + play_height/2 - (label.get_height()/2) - 250))
 
+
+#Method to write text in the middle of the window
 def draw_text_middle(surface, text, size, color):
     font = pygame.font.SysFont('Tahoma', size, bold = True)
     label = font.render(text, 1, color)
@@ -243,6 +254,7 @@ def draw_text_middle(surface, text, size, color):
 
 
 
+# Function to clear the rows after a row has been completed.
 def clear_rows(grid, locked):
 
     inc = 0
@@ -282,6 +294,7 @@ def clear_rows(grid, locked):
 
 
 
+# We simply check if the blocked positions have reached the top of the grid
 def check_lost(positions):
     for pos in positions:
         x, y = pos
@@ -293,25 +306,28 @@ def check_lost(positions):
 
 
 def convert_shape_format(shape):
+    # Initialize an empty list to store the positions of the shape
     positions = []
 
-    # if rotation is 0, we get the first iteration of the shape, and the more we rotate, the more we get the next iteration
+    # Get the current shape format based on its rotation
     format = shape.shape[shape.rotation % len(shape.shape)]
 
-
+    # Iterate over each line in the shape format
     for i, line in enumerate(format):
+        # Convert the line to a list of characters
         row = list(line)
+        # Iterate over each character in the line
         for j, column in enumerate(row):
-        
-            # if there is a block there, we add the position to the list
+            # If the character is '0', it represents a block, so add its position to the list
             if column == '0':
+                # Calculate the position of the block based on the shape's x and y coordinates
                 positions.append((shape.x + j, shape.y + i))
 
-
+    # Offset the positions so they display correctly
     for i, pos in enumerate(positions):
-        # We offset the position so it displays correctly
         positions[i] = (pos[0] - 2, pos[1] - 4)
 
+    # Return the list of positions
     return positions
 
 def valid_space(shape, grid):
@@ -331,6 +347,8 @@ def valid_space(shape, grid):
     return True
 
 
+
+# Function to draw the grid, self explanatory
 def draw_grid(surface, grid):
     # making the variables shorter and easier to write
     sx = top_left_x
@@ -344,6 +362,8 @@ def draw_grid(surface, grid):
             pygame.draw.line(surface, (128, 128, 128), (sx + j*block_size, sy), (sx + j*block_size, sy+play_height))
 
 
+
+# Creating the whole window
 def draw_window(surface, grid, score=0):
     surface.fill((0, 0, 0))
 
@@ -378,10 +398,13 @@ def draw_window(surface, grid, score=0):
 
 
 
+# Method that displays the warning once the user leaves or looks away for too long
 def display_warning(surface, image_location):
     global warning_visible
 
-    if warning_visible:
+
+    # If the warning hasnt been turned off, we display the images, as well as the red border and the message
+    if warning_visible:    
         im = pygame.image.load(image_location)
         im = pygame.transform.scale(im, (100, 100))
         surface.blit(im, (screen_width - play_width + 60, screen_height - play_height))
@@ -396,7 +419,6 @@ def display_warning(surface, image_location):
         # Right border
         pygame.draw.rect(surface, (255, 0, 0), (screen_width - warning_border_width, 0, warning_border_width, screen_height))
 
-
         pygame.draw.rect(surface, (50, 50, 50), (0, (screen_height//2) + 25, 1000, 50))
         draw_text_middle(win, "WARNING, COME BACK TO GAME", 40, (255, 0, 0))
 
@@ -406,13 +428,18 @@ def stop_warning():
     warning_visible = False
     stop_alarm()
 
+# Function that sounds the alarm
 def sound_alarm(audio_location):
     pygame.mixer.music.load(audio_location)
     pygame.mixer.music.play(-1)
 
+
+# Function that stops the alarm from ringing
 def stop_alarm():
     pygame.mixer.music.stop()
 
+
+# Main method. This is where the good stuff is
 def main(win):
     
     # We start with no locked positions
@@ -424,9 +451,12 @@ def main(win):
     # Variable that if true will switch the status of a block. It will stop it from falling
     change_piece = False
 
-    # Generate the 
+    # Generate the current and next piece.
     current_piece = get_shape()
     next_piece = get_shape()
+
+    # We have these variables to keep track of the blocks' falling speed
+    # and the player's cumulative score over the round
     clock = pygame.time.Clock()
     fall_time = 0
     fall_speed = 0.3
@@ -438,15 +468,17 @@ def main(win):
         sound_alarm(alarm_audio_location)
 
     run = True
-    
+
+    # Main game loop that keeps the game running as long as run = True
     while run:
 
+        
         grid = create_grid(locked_positions)
         fall_time += clock.get_rawtime()
         level_time += clock.get_rawtime()
         clock.tick()
         
-
+        # Every five seconds the speed gets increased
         if level_time/1000 > 5:
             level_time = 0
             if fall_speed > 0.12:
@@ -455,11 +487,13 @@ def main(win):
         if fall_time/1000 > fall_speed:
             fall_time = 0
             current_piece.y += 1
+
+            # If the piece hits the bottom of the grid or another piece, we lock it in place
             if not(valid_space(current_piece, grid)) and current_piece.y > 0:
                 current_piece.y -= 1
                 change_piece = True
 
-
+        # We check for many events, keystrokes, and we have different things happening depending on input
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 run = False
@@ -488,6 +522,8 @@ def main(win):
                         if not(valid_space(current_piece, grid)):
                             current_piece.rotation -= 1
                 
+
+                # temporary keybindings to control and test the warning and alarm
                 if event.key == pygame.K_1:
                     global warning_visible
                     warning_visible = True
@@ -503,14 +539,17 @@ def main(win):
 
 
 
-                
-        
+        # Convert the current piece's shape format to a list of positions
         shape_pos = convert_shape_format(current_piece)
 
+        # Iterate over each position in the shape
         for i in range(len(shape_pos)):
+            # Get the x and y coordinates of the position
             x, y = shape_pos[i]
 
+            # If the y coordinate is greater than -1 (i.e., the piece is not above the grid)
             if y > -1:
+                # Set the color of the grid at the position to the color of the current piece
                 grid[y][x] = current_piece.color
             
         if change_piece:
@@ -574,6 +613,7 @@ def main_menu(win):
     ai_y = top_left_y + play_height / 2 - (ai_label.get_height() / 2) - 25
     ai_button = pygame.Rect(ai_x - 20, ai_y - 10, ai_label.get_width() + 40, ai_label.get_height() + 20)
 
+    # Main menu loop
     while run:
         win.fill((0, 0, 0))
         draw_text_middle_up(win, 'Welcome to TETRIS', 60, (255, 255, 255))
@@ -599,9 +639,9 @@ def main_menu(win):
         else:
             pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_ARROW)  # Default arrow cursor
 
-
-
         pygame.display.update()
+
+        # listening for events 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 run = False
@@ -614,9 +654,11 @@ def main_menu(win):
                     print("AI Logs button clicked!")  # Placeholder for AI Logs functionality
             
     
+    # If we make it here, it means player is done, we quit
     pygame.display.quit()
     
 
+# Initialize the window, the caption, and we START
 win = pygame.display.set_mode((screen_width, screen_height))
 pygame.display.set_caption('TETRIS')
 main_menu(win)
