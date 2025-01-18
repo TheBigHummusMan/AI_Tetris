@@ -47,6 +47,7 @@ block_size = 30
 top_left_x = (screen_width - play_width) // 2
 top_left_y = screen_height - play_height
 
+pygame.mixer.init()
 warning_image_location = 'game/images/warning_image.png'
 alarm_audio_location = 'game/audio/alarm_audio.mp3'
 warning_border_width = 20
@@ -174,11 +175,16 @@ pygame.font.init()
 
 
 class Piece(object):
+    # Initialize a new piece with its position and shape
     def __init__(self, x, y, shape):
+        # Set the x and y coordinates of the piece
         self.x = x
         self.y = y
+        # Set the shape of the piece
         self.shape = shape
+        # Set the color of the piece based on its shape
         self.color = shape_colors[shapes_list.index(shape)]
+        # Initialize the rotation of the piece to 0
         self.rotation = 0
 
 
@@ -356,7 +362,7 @@ def draw_window(surface, grid, score=0):
     sx = top_left_x + play_width + 50
     sy = top_left_y + play_height/2 - 100
 
-    surface.blit(label, (sx + 50, sy - 280))
+    surface.blit(label, (sx + 0, sy - 280))
 
     for i in range(len(grid)):
         for j in range(len(grid[i])):
@@ -398,11 +404,11 @@ def display_warning(surface, image_location):
 def stop_warning():
     global warning_visible
     warning_visible = False
+    stop_alarm()
 
 def sound_alarm(audio_location):
-    pygame.mixer.init()
     pygame.mixer.music.load(audio_location)
-    pygame.mixer.music.play()
+    pygame.mixer.music.play(-1)
 
 def stop_alarm():
     pygame.mixer.music.stop()
@@ -485,7 +491,8 @@ def main(win):
                 if event.key == pygame.K_1:
                     global warning_visible
                     warning_visible = True
-                    display_warning(win, warning_image_location)
+                    global user_inactive
+                    user_inactive = True
 
                 if event.key == pygame.K_2:
                     stop_warning()
@@ -514,15 +521,30 @@ def main(win):
             next_piece = get_shape()
             change_piece = False
 
-            # 10 points per row cleared
-            score += clear_rows(grid, locked_positions) * 10
+            # 100 ppr for one row
+            # 300 ppr for two rows
+            # 500 ppr for three rows
+            # 800 ppr for four rows
+            #score += clear_rows(grid, locked_positions) * 10
+
+            rows_cleared = clear_rows(grid, locked_positions)
+            if rows_cleared > 3: 
+                score += rows_cleared * 800
+            elif rows_cleared > 2:
+                score += rows_cleared * 500
+            elif rows_cleared > 1: 
+                score += rows_cleared * 300
+            else:
+                score += rows_cleared * 100
+            
 
         
         draw_window(win, grid, score)
         draw_next_shape(next_piece, win)
             
             
-
+        if (user_inactive):
+            display_warning(win, warning_image_location)
 
         pygame.display.flip()
 
