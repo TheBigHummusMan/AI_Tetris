@@ -181,14 +181,16 @@ class Piece(object):
         # Set the x and y coordinates of the piece
         self.x = x
         self.y = y
+        self.index = shapes_list.index(shape)
         # Set the shape of the piece
         self.shape = shape
         # Set the color of the piece based on its shape
-        self.color = shape_colors[shapes_list.index(shape)]
+        self.color = shape_colors[self.index]
         # Initialize the rotation of the piece to 0
         self.rotation = 0
     def get_stats(self):
-        return [self.x,self.y,self.color,self.rotation]
+        print([self.x,self.y, self.index ,self.rotation])
+        return [self.x,self.y, self.index ,self.rotation]
 
 class TetrisGameTrain:
     def __init__(self,win,screen_width,screen_height,play_width,play_height):
@@ -210,6 +212,8 @@ class TetrisGameTrain:
         self.reward = 0
         self.run = None
         self.total_rows_cleared = 0
+        self.current_piece_stat = None
+
 
 
     # This function creates a grid, the dictionnary 'locked_positions' to store the positions of the pieces 
@@ -516,6 +520,7 @@ class TetrisGameTrain:
         pygame.mixer.music.stop()
     
     def play_step(self,action):
+        self.current_piece_stat = self.current_piece.get_stats()
         if self.ai_control:
             if np.array_equal(action, [1, 0, 0,0]):
                 self.current_piece.x -= 1
@@ -566,8 +571,6 @@ class TetrisGameTrain:
 
         # Main game loop that keeps the game running as long as run = True
         while run:
-
-            
             grid = self.create_grid(locked_positions)
             fall_time += clock.get_rawtime()
             level_time += clock.get_rawtime()
