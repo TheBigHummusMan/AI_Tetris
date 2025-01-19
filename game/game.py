@@ -53,8 +53,8 @@ if os.name == 'nt':
     warning_image_location = 'images\\warning_image.png'
     alarm_audio_location = 'audio\\alarm_audio.mp3'
 else:
-    warning_image_location = 'game/images/warning_image.png'
-    alarm_audio_location = 'game/audio/alarm_audio.mp3'
+    warning_image_location = 'images/warning_image.png'
+    alarm_audio_location = 'audio/alarm_audio.mp3'
 
 warning_border_width = 20
 warning_visible = False
@@ -653,20 +653,26 @@ class TetrisGameTrain:
                         global user_inactive
                         user_inactive = True
 
-                    print(self.event_queue.empty())
-                    if not self.event_queue.empty():
-                        event = self.event_queue.get()
-                        previous = "NOT_LOOKING_AWAY"
-                        # if the user ignores the warnings, we sound the alarms
-                        if event == "LOOKING_AWAY_5":
-                            warning_visible = True
-                            self.display_warning(win, warning_image_location)
-                        if event == "LOOKING_AWAY_10":
-                            self.sound_alarm(alarm_audio_location)
-                        if event == "NOT_LOOKING_AWAY":
-                            warning_visible = False
-                            self.stop_warning()
-                            self.stop_alarm()
+
+            if not self.event_queue.empty():
+                event = self.event_queue.get()
+                previous = "NOT_LOOKING_AWAY"
+                print(event)
+                # if the user ignores the warnings, we sound the alarms
+                if event == "LOOKING_AWAY_5":
+                    user_inactive = True
+                    warning_visible = True
+                    self.display_warning(win, warning_image_location)
+                if event == "LOOKING_AWAY_10":
+                    user_inactive = True
+                    user_ignored_warnings = True
+                    self.sound_alarm(alarm_audio_location)
+                if event == "NOT_LOOKING_AWAY":
+                    user_inactive = False
+                    user_ignored_warnings = False
+                    warning_visible = False
+                    self.stop_warning()
+                    self.stop_alarm()
 
 
             # Convert the current piece's shape format to a list of positions

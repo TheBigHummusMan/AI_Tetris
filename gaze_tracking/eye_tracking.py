@@ -13,7 +13,7 @@ def run_head_tracking(event_queue, kill):
 
     looking_away_start_time = None
     consecutive_away_frames = 0
-    max_tolerance_frames = 10
+    max_tolerance_frames = 5
     looking = NOT_LOOKING_AWAY
 
     def calculate_angle(a, b, c):
@@ -194,17 +194,22 @@ def run_head_tracking(event_queue, kill):
                         cv2.circle(frame, pupil_center, int(pupil_radius), (0, 0, 255), 2)
 
                 if looking_away:
+                    print("here")
                     if looking_away_start_time is None:
+                        print("inside")
                         # Start the timer when the user first looks away
                         looking_away_start_time = time.time()
                         consecutive_away_frames = 1
+                        print("right")
                     else:
+                        print("rigt")
                         consecutive_away_frames += 1
                         looking_away_duration = time.time() - looking_away_start_time
-                        print(looking_away_duration)
-                        if 8 > looking_away_duration > 0:
+                        if 8 > looking_away_duration > 0 and looking != LOOKING_AWAY_5:
                            event_queue.put("LOOKING_AWAY_5")
-                        elif looking_away_duration > 8:
+                           print("a")
+                        elif looking_away_duration > 8 and looking != LOOKING_AWAY_10:
+                            print("b")
                             event_queue.put("LOOKING_AWAY_10")
                 else:
                     if 0 < consecutive_away_frames < max_tolerance_frames:
@@ -214,7 +219,8 @@ def run_head_tracking(event_queue, kill):
                         # Reset tracking if user is no longer looking away
                         looking_away_start_time = None
                         consecutive_away_frames = 0
-                        event_queue.put("NOT_LOOKING_AWAY")
+
+                        if looking != NOT_LOOKING_AWAY :event_queue.put("NOT_LOOKING_AWAY")
 
                 # Optional: Draw all detected landmarks on the face
                 mp_drawing.draw_landmarks(
