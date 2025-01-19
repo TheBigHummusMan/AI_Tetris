@@ -190,7 +190,7 @@ class Piece(object):
     def get_stats(self):
         return [self.x,self.y,self.shape,self.rotation]
 
-class TetrisGameTrain:
+class TetrisGame:
     def __init__(self,win,screen_width,screen_height,play_width,play_height):
         self.win = win
         self.screen_width = screen_width
@@ -715,6 +715,6 @@ class TetrisGameTrain:
 
 # Initialize the window, the caption, and we START
 win = pygame.display.set_mode((screen_width, screen_height))
-game = TetrisGameTrain(win,screen_width,screen_height,play_height,play_height)
+game = TetrisGame(win,screen_width,screen_height,play_height,play_height)
 pygame.display.set_caption('TETRIS')
 game.main_menu(win)

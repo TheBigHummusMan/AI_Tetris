@@ -48,7 +48,8 @@ class Agent:
             final_move[move] = 1
         
         else:
-            state0 = torch.tensor(state, dtype=torch.float)
+            # state
+            state0 = torch.tensor(0, dtype=torch.float)
             prediction = self.model(state0)
             move = torch.argmax(prediction).item()
             final_move[move] = 1
@@ -80,8 +81,8 @@ class Agent:
             #reward, done, score = game.play_step(final_move)
             new_state = self.set_state(game)
 
-            self.train_short_memory(state_old, final_move, reward, new_state, done)
-            self.remember(state_old, final_move, reward, new_state, done)
+            self.train_short_memory(state_old, final_move, game.reward, new_state, game.run)
+            self.remember(state_old, final_move, game.reward, new_state, game.run)
             
             if self.done:
                 game.main()
