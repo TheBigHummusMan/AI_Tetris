@@ -1,4 +1,6 @@
-# AI_Tetris
+# The Whistleblowers' Tetris Autopilot!! 
+<img src="game/images/team_logo.jpeg" alt="team logo" width="500"/>
+
 
 ### uOttahack 7 project for NAV Canada
 
