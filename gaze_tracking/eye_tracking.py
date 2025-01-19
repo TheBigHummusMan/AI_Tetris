@@ -3,6 +3,7 @@ import mediapipe as mp
 import numpy as np
 import math
 import time
+import os
 
 looking_away_start_time = None
 looking_away_duration_threshold = 5
@@ -130,7 +131,12 @@ face_mesh = mp_face_mesh.FaceMesh(static_image_mode=False, max_num_faces=1, refi
 mp_drawing = mp.solutions.drawing_utils
 mp_drawing_styles = mp.solutions.drawing_styles
 
-cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+if os.name == 'nt':
+    cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+else:
+    cap = cv2.VideoCapture(0)
+
+
 
 while cap.isOpened():
     ret, frame = cap.read()
