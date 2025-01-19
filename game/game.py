@@ -2,14 +2,12 @@
 # Tech with Tim's tutorial was used to learn how  #
 # to use pygame when it comes to a tetris game    #
 ###################################################
-
-
+import multiprocessing
 import random
 import pygame
 import numpy as np
 
-
-
+from gaze_tracking import eye_tracking
 
 # creating the data structure for pieces
 # setting up global vars
@@ -564,9 +562,14 @@ class TetrisGameTrain:
         level_time = 0
         score = 0
 
-        # if the user ignores the warnings, we sound the alarms
-        if (user_ignored_warnings):
-            self.sound_alarm(alarm_audio_location)
+
+
+        # Event queue for communication between processes
+        event_queue = multiprocessing.Queue()
+
+        # Start the background process for eye tracking
+        p1 = multiprocessing.Process(target=eye_tracking.run_head_tracking, args=(event_queue,))
+        p1.start()
 
         run = True
 
@@ -600,9 +603,11 @@ class TetrisGameTrain:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     run = False
+                    p1.join()
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_ESCAPE:
                         run = False
+                        p1.join()
                         print("break")
                         
                 if event.type == pygame.KEYDOWN:
@@ -638,12 +643,19 @@ class TetrisGameTrain:
                         global user_inactive
                         user_inactive = True
 
-                    if event.key == pygame.K_2:
-                        self.stop_warning()
-                    if event.key == pygame.K_9:
-                        self.sound_alarm(alarm_audio_location)
-                    if event.key == pygame.K_0:
-                        self.stop_alarm()
+                    if not event_queue.empty():
+                        event = event_queue.get()
+                        previous = "NOT_LOOKING_AWAY"
+                        # if the user ignores the warnings, we sound the alarms
+                        if event == (previous := "LOOKING_AWAY_5"):
+                            self.sound_alarm(alarm_audio_location)
+                        if event == (previous := "LOOKING_AWAY_10"):
+                            self.sound_alarm(alarm_audio_location)
+                        if event == "NOT_LOOKING_AWAY" and previous == "LOOKING_AWAY_5":
+                            self.stop_warning()
+                        if event == "NOT_LOOKING_AWAY" and previous == "LOOKING_AWAY_10":
+                            self.stop_warning()
+                            self.stop_alarm()
 
                         
 
@@ -695,7 +707,7 @@ class TetrisGameTrain:
             self.draw_window(win, grid, score)
             self.draw_next_shape(next_piece, win)
                 
-                
+
             if (user_inactive):
                 self.display_warning(win, warning_image_location)
 
@@ -710,12 +722,71 @@ class TetrisGameTrain:
                 self.reward -= 100
                 run = False
 
+        p1.join()
+
+    def main_menu(self, win):
+        run = True
+
+        font = pygame.font.SysFont('Tahoma', 40, bold=True)
+        # Define button dimensions for "PLAY"
+        play_label = font.render("PLAY", 1, (255, 255, 255))
+        play_x = top_left_x + play_width / 2 - (play_label.get_width() / 2)
+        play_y = top_left_y + play_height / 2 - (play_label.get_height() / 2) - 100
+        play_button = pygame.Rect(play_x - 20, play_y - 10, play_label.get_width() + 40, play_label.get_height() + 20)
+
+        # Define button dimensions for "CHECK AI LOGS" (optional)
+        ai_label = font.render("CHECK AI LOGS", 1, (255, 255, 255))
+        ai_x = top_left_x + play_width / 2 - (ai_label.get_width() / 2)
+        ai_y = top_left_y + play_height / 2 - (ai_label.get_height() / 2) - 25
+        ai_button = pygame.Rect(ai_x - 20, ai_y - 10, ai_label.get_width() + 40, ai_label.get_height() + 20)
+
+        # Main menu loop
+        while run:
+            win.fill((0, 0, 0))
+            self.draw_text_middle_up(win, 'Welcome to TETRIS', 60, (255, 255, 255))
+
+            # Draw buttons
+            pygame.draw.rect(win, (50, 50, 50), play_button)  # Play button background
+            win.blit(play_label, (play_x, play_y))  # Play button text
+
+            pygame.draw.rect(win, (50, 50, 50), ai_button)  # AI Logs button background
+            win.blit(ai_label, (ai_x, ai_y))  # AI Logs button text
+
+            pygame.display.update()
+
+            mouse_pos = pygame.mouse.get_pos()  # Get mouse position
+
+            # Check if the mouse is over the "PLAY" button and change the cursor
+            if play_button.collidepoint(mouse_pos):
+                pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_HAND)  # Hand cursor
+            elif ai_button.collidepoint(mouse_pos):
+                pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_HAND)  # Hand cursor
+            else:
+                pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_ARROW)  # Default arrow cursor
+
+            pygame.display.update()
+
+            # listening for events
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    run = False
+
+                if event.type == pygame.MOUSEBUTTONDOWN:  # Check for mouse click
+                    mouse_pos = pygame.mouse.get_pos()  # Get mouse position
+                    if play_button.collidepoint(mouse_pos):  # Check if "PLAY" button is clicked
+                        self.main(win)  # Start the game
+                    elif ai_button.collidepoint(mouse_pos):  # Check if "CHECK AI LOGS" button is clicked
+                        print("AI Logs button clicked!")  # Placeholder for AI Logs functionality
+
+        # If we make it here, it means player is done, we quit
+        pygame.display.quit()
 
 
-    
 
-# Initialize the window, the caption, and we START
-win = pygame.display.set_mode((screen_width, screen_height))
-game = TetrisGameTrain(win,screen_width,screen_height,play_height,play_height)
-pygame.display.set_caption('TETRIS')
-#game.main_menu(win)
+
+if __name__ == "__main__":
+    # Initialize the window, the caption, and we START
+    win = pygame.display.set_mode((screen_width, screen_height))
+    game = TetrisGameTrain(win, screen_width, screen_height, play_height, play_height)
+    pygame.display.set_caption('TETRIS')
+    game.main_menu(win)

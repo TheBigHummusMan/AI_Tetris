@@ -241,7 +241,7 @@ def run_head_tracking(event_queue):
                         cv2.circle(frame, (x, y), 2, (0, 255, 0), -1)
 
         # Display the processed frame
-        cv2.imshow("Eye Tracking with Mediapipe", frame)
+        # cv2.imshow("Eye Tracking with Mediapipe", frame)
 
         # Exit the loop if the user presses the 'q' key
         if cv2.waitKey(1) & 0xFF == ord('q'):
