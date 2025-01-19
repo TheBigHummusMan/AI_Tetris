@@ -2,6 +2,14 @@ import cv2
 import mediapipe as mp
 import numpy as np
 import math
+import time
+
+looking_away_start_time = None
+looking_away_duration_threshold = 5
+consecutive_away_frames = 0
+max_tolerance_frames = 5
+frame_rate = 30
+looking_away_duration = 0
 
 def calculate_angle(a, b, c):
     """Calculate the angle between three points."""
@@ -43,13 +51,13 @@ def detect_head_turn(face_landmarks, frame_width, frame_height):
     # Calculate roll (side tilt)
     roll_angle = calculate_angle(left_eye, right_eye, (right_eye[0], left_eye[1], 0))  # Approximate roll
 
-    # Check thresholds
-    if abs(yaw_angle) > 30:  # Yaw threshold
-        print("Head turned too far horizontally!")
-    if abs(pitch_angle) > 20:  # Pitch threshold
-        print("Head tilted too far vertically!")
-    if abs(roll_angle) > 15:  # Roll threshold
-        print("Head tilted sideways!")
+    # # Check thresholds
+    # if abs(yaw_angle) > 30:  # Yaw threshold
+    #     print("Head turned too far horizontally!")
+    # if abs(pitch_angle) > 20:  # Pitch threshold
+    #     print("Head tilted too far vertically!")
+    # if abs(roll_angle) > 15:  # Roll threshold
+    #     print("Head tilted sideways!")
 
     return yaw_angle, pitch_angle, roll_angle
 
@@ -122,7 +130,7 @@ face_mesh = mp_face_mesh.FaceMesh(static_image_mode=False, max_num_faces=1, refi
 mp_drawing = mp.solutions.drawing_utils
 mp_drawing_styles = mp.solutions.drawing_styles
 
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
 
 while cap.isOpened():
     ret, frame = cap.read()
@@ -140,7 +148,8 @@ while cap.isOpened():
     if results.multi_face_landmarks:
         for face_landmarks in results.multi_face_landmarks:
             yaw, pitch, roll = detect_head_turn(face_landmarks, frame.shape[1], frame.shape[0])
-            print(f"Yaw: {yaw:.2f}, Pitch: {pitch:.2f}, Roll: {roll:.2f}")
+
+            looking_away = False
 
             for eye_indices in [left_eye_indices, right_eye_indices]:
                 # Crop the eye region
@@ -161,16 +170,42 @@ while cap.isOpened():
 
                 # Draw the detected pupil
                 if pupil_center and pupil_radius:
+
                     pupil_center = (pupil_center[0] + x_coords[0],pupil_center[1] + y_coords[0])
                     center = ((x_coords[0]+x_coords[1])/2, (y_coords[0] + y_coords[1])/2)
+
                     threshold_pupil_radius = pupil_radius
+
                     x_limit = (center[0] - threshold_pupil_radius, center[0] + threshold_pupil_radius)
                     y_limit = (center[1] - threshold_pupil_radius/1.5, center[1] + threshold_pupil_radius/1.5)
+
                     if not (x_limit[0] < pupil_center[0] < x_limit[1] and y_limit[0] < pupil_center[1] < y_limit[1]):
-                        print("looking away uh")
-                    # if y_limit[1] - y_limit[0] < pupil_radius/4:
-                    #     print("eye closed")
+                        looking_away = True
+                        break
+
                     cv2.circle(frame, pupil_center, int(pupil_radius), (0, 0, 255), 2)
+
+            if looking_away:
+                if looking_away_start_time is None:
+                    # Start the timer when the user first looks away
+                    looking_away_start_time = time.time()
+                    consecutive_away_frames = 1
+                else:
+                    consecutive_away_frames += 1
+                    looking_away_duration = time.time() - looking_away_start_time > looking_away_duration_threshold
+                    if 10 > looking_away_duration > 5:
+                        print("User has been looking away for 5 seconds or more!")
+                    elif looking_away_duration > 10:
+                        print("User has been looking away for 10 seconds or more!")
+            else:
+                if 0 < consecutive_away_frames < max_tolerance_frames:
+                    # Allow skipped frames without resetting the timer
+                    consecutive_away_frames += 1
+                else:
+                    # Reset tracking if user is no longer looking away
+                    looking_away_start_time = None
+                    looking_away_duration = 0
+                    consecutive_away_frames = 0
 
             # Optional: Draw all detected landmarks on the face
             mp_drawing.draw_landmarks(
