@@ -188,7 +188,7 @@ class Piece(object):
         # Initialize the rotation of the piece to 0
         self.rotation = 0
     def get_stats(self):
-        return [self.x,self.y,self.shape,self.rotation]
+        return [self.x,self.y,self.color,self.rotation]
 
 class TetrisGameTrain:
     def __init__(self,win,screen_width,screen_height,play_width,play_height):
