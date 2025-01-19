@@ -201,7 +201,8 @@ def run_head_tracking(event_queue):
                         consecutive_away_frames = 1
                     else:
                         consecutive_away_frames += 1
-                        looking_away_duration = time.time() - looking_away_start_time > looking_away_duration_threshold
+                        looking_away_duration = time.time() - looking_away_start_time
+                        print(looking_away_duration)
                         if 10 > looking_away_duration > 5:
                             if looking != LOOKING_AWAY_5: event_queue.put("LOOKING_AWAY_5")
                         elif looking_away_duration > 10:
@@ -241,7 +242,7 @@ def run_head_tracking(event_queue):
                         cv2.circle(frame, (x, y), 2, (0, 255, 0), -1)
 
         # Display the processed frame
-        # cv2.imshow("Eye Tracking with Mediapipe", frame)
+        cv2.imshow("Eye Tracking with Mediapipe", frame)
 
         # Exit the loop if the user presses the 'q' key
         if cv2.waitKey(1) & 0xFF == ord('q'):
