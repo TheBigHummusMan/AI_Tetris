@@ -165,16 +165,8 @@ shapes_list = [S, Z, I, O, J, L, T]
 
 shape_colors = [(0, 255, 0), (255, 0, 0), (0, 255, 255), (255, 255, 0), (255, 165, 0), (0, 0, 255), (128, 0, 128)]
 
-
-
-
-
-
-
 pygame.font.init()
-
-
-
+pygame.init()
 class Piece(object):
     # Initialize a new piece with its position and shape
     def __init__(self, x, y, shape):
@@ -199,12 +191,11 @@ class TetrisGameTrain:
         self.play_width = play_width
         self.play_height = play_height
         self.win = pygame.display.set_mode((screen_width, screen_height))
-        self.display = pygame.display.set_mode((self.screen_width,self.screen_height))
         pygame.display.set_caption('TETRIS')
         self.locked_positions = {}
         self.grid = self.create_grid(self.locked_positions)
-        self.current_piece = self.get_shape().get_stats()
-        self.next_piece = self.get_shape().get_stats()
+        self.current_piece = self.get_shape()
+        self.next_piece = self.get_shape()
         self.fall_time = 0
         self.fall_speed = 0.3
         self.level_time = 0
@@ -212,10 +203,9 @@ class TetrisGameTrain:
         self.running = True
         self.ai_control = True
         self.reward = 0
-        self.run = None
+        self.run = True
         self.total_rows_cleared = 0
         self.current_piece_stat = None
-
 
 
     # This function creates a grid, the dictionnary 'locked_positions' to store the positions of the pieces 
@@ -476,71 +466,76 @@ class TetrisGameTrain:
         
         
         pygame.draw.rect(surface, (255, 0, 0), (top_left_x,top_left_y, play_width, play_height), 4)
-
         self.draw_grid(surface, grid)
-
-
-
-    # Method that displays the warning once the user leaves or looks away for too long
-    def display_warning(self,surface, image_location):
-        global warning_visible
-
-
-        # If the warning hasnt been turned off, we display the images, as well as the red border and the message
-        if warning_visible:    
-            im = pygame.image.load(image_location)
-            im = pygame.transform.scale(im, (100, 100))
-            surface.blit(im, (screen_width - play_width + 60, screen_height - play_height))
-            surface.blit(im, (screen_width - (2*play_width) - 60, screen_height - play_height))
-            
-            # Top Border
-            pygame.draw.rect(surface, (255, 0, 0), (0, 0, screen_width, warning_border_width))
-            # Bottom border
-            pygame.draw.rect(surface, (255, 0, 0), (0, screen_height - warning_border_width, screen_width, warning_border_width))
-            # Left border
-            pygame.draw.rect(surface, (255, 0, 0), (0, 0, warning_border_width, screen_height))
-            # Right border
-            pygame.draw.rect(surface, (255, 0, 0), (screen_width - warning_border_width, 0, warning_border_width, screen_height))
-
-            pygame.draw.rect(surface, (50, 50, 50), (0, (screen_height//2) + 25, 1000, 50))
-            self.draw_text_middle(win, "WARNING, COME BACK TO GAME", 40, (255, 0, 0))
-
-    # Function to stop the warning (remove red borders and images)
-    def stop_warning(self):
-        global warning_visible
-        warning_visible = False
-        self.stop_alarm()
-
-    # Function that sounds the alarm
-    def sound_alarm(self,audio_location):
-        pygame.mixer.music.load(audio_location)
-        pygame.mixer.music.play(-1)
-
-
-    # Function that stops the alarm from ringing
-    def stop_alarm(self):
-        pygame.mixer.music.stop()
     
-    def play_step(self,action):
-        print("retardismo")
-        self.current_piece_stat = self.current_piece.get_stats()
-        if self.ai_control:
-            if np.array_equal(action, [1, 0, 0,0]):
-                self.current_piece.x -= 1
-                if not(self.valid_space(self.current_piece, self.grid)):
-                    self.current_piece.x += 1
-            if np.array_equal(action, [0, 1, 0,0]):
-                self.current_piece.x += 1
-                if not(self.valid_space(self.current_piece, self.grid)):
-                    self.current_piece.x -= 1
-            if np.array_equal(action, [0, 0, 1,0]):
-                self.current_piece.rotation += 1
-                if not(self.valid_space(self.current_piece, self.grid)):
-                    self.current_piece.rotation -= 1
-            if np.array_equal(action, [0, 0, 0,1]):
-                pass
+    
+
             
 
+
+    def reset(self):
+        """
+        Resets the game to its initial state.
+        """
+        # Clear locked positions and create a new grid
+        self.locked_positions = {}
+        self.grid = self.create_grid(self.locked_positions)
+        
+        # Reset the current and next pieces
+        self.current_piece = self.get_shape()
+        self.next_piece = []
+        
+        # Reset timers and counters
+        self.fall_time = 0
+        self.fall_speed = 0.3
+        self.level_time = 0
+        self.score = 0
+        
+        # Reset game state flags
+        self.running = True
+        self.ai_control = True
+        self.reward = 0
+        self.run = True
+        self.total_rows_cleared = 0
+        self.current_piece_stat = None
+
+        # Optionally, redraw the screen
+        self.draw_window(self.win, self.grid, self.score)
+        pygame.display.update()
+
+        print("Game has been reset.")
+    
+    def draw_window(self,surface, grid, score=0):
+        surface.fill((0, 0, 0))
+
+        pygame.font.init()
+        font = pygame.font.SysFont('Tahoma', 60)
+        label = font.render('Tetris', 1, (255, 255, 255))
+
+        # This draws the label we just created centered in the screen
+        # The 30 at the end moves the label down 30 from the top 
+        surface.blit(label, (top_left_x + play_width/2 - (label.get_width()/2), 30))
+
+        # current score
+        font = pygame.font.SysFont('Tahoma', 30)
+        label = font.render('Score: ' + str(score), 1, (255, 255, 255))
+
+        sx = top_left_x + play_width + 50
+        sy = top_left_y + play_height/2 - 100
+
+        surface.blit(label, (sx + 0, sy - 280))
+
+        for i in range(len(grid)):
+            for j in range(len(grid[i])):
+                # We draw the color (grid[i][j]) onto the surface, at the position we want
+                # toplefty + i*block_size is the true 'y' position, same thing for 'x'
+                # We then specify, the width and length of drawing, and the '0' means we fill the square (not a border)
+                pygame.draw.rect(surface, grid[i][j], (top_left_x + j*block_size, top_left_y + i*block_size, block_size, block_size), 0)
+        
+        
+        pygame.draw.rect(surface, (255, 0, 0), (top_left_x,top_left_y, play_width, play_height), 4)
+        pygame.display.update()
+        self.draw_grid(surface, grid)
 
     # Main method. This is where the good stuff is
     def main(self,win):
@@ -556,6 +551,7 @@ class TetrisGameTrain:
 
         # Generate the current and next piece.
         self.current_piece = self.get_shape()
+        #print(self.current_piece)
         next_piece = self.get_shape()
 
         # We have these variables to keep track of the blocks' falling speed
@@ -566,18 +562,40 @@ class TetrisGameTrain:
         level_time = 0
         score = 0
 
-        # if the user ignores the warnings, we sound the alarms
-        if (user_ignored_warnings):
-            self.sound_alarm(alarm_audio_location)
-
         run = True
 
         # Main game loop that keeps the game running as long as run = True
         while run:
+            def play_step(self,action):
+                print("checking if can ai")
+                if self.ai_control:
+                    if np.array_equal(action, [1, 0, 0,0]):
+                        self.current_piece.x -= 1
+                        print('left')
+                        if not(self.valid_space(self.current_piece, self.grid)):
+                            self.current_piece.x += 1
+                    elif np.array_equal(action, [0, 1, 0,0]):
+                        self.current_piece.x += 1
+                        print('right')
+                        if not(self.valid_space(self.current_piece, self.grid)):
+                            self.current_piece.x -= 1
+                    elif np.array_equal(action, [0, 0, 1,0]):
+                        self.current_piece.rotation += 1
+                        print('rotate')
+                        if not(self.valid_space(self.current_piece, self.grid)):
+                            self.current_piece.rotation -= 1
+                    elif np.array_equal(action, [0, 0, 0,1]):
+                        print('nothing')
+                    else:
+                        print("how did you get here?")
+                self.draw_window(self.win,self.grid,self.score)
+                pygame.display.update()
+                return self.reward, not self.run, self.score
             grid = self.create_grid(locked_positions)
             fall_time += clock.get_rawtime()
             level_time += clock.get_rawtime()
             clock.tick()
+            self.current_piece_stat = self.current_piece.get_stats()
             
             # Every five seconds the speed gets increased
             if level_time/1000 > 5:
@@ -594,59 +612,7 @@ class TetrisGameTrain:
                     self.current_piece.y -= 1
                     change_piece = True
                     self.ai_control = True
-            # We check for many events, keystrokes, and we have different things happening depending on input
-
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    run = False
-                if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_ESCAPE:
-                        run = False
-                        print("break")
-                        
-                if event.type == pygame.KEYDOWN:
-                    self.ai_control = False
-                if self.ai_control:
-                    self.play_step(self,agent.action)
-                if(not self.ai_control and event.type == pygame.KEYDOWN):
-                    if event.key == pygame.K_LEFT:
-                        self.current_piece.x -= 1
-                        if not(self.valid_space(self.current_piece, grid)):
-                            self.current_piece.x += 1
-
-                    if event.key == pygame.K_RIGHT:
-                            self.current_piece.x += 1
-                            if not(self.valid_space(self.current_piece, grid)):
-                                self.current_piece.x -= 1
-                        
-                    if event.key == pygame.K_DOWN:
-                            self.current_piece.y += 1
-                            if not(self.valid_space(self.current_piece, grid)):
-                                self.current_piece.y -= 1
-                        
-                    if event.key == pygame.K_UP:
-                            self.current_piece.rotation += 1
-                            if not(self.valid_space(self.current_piece, grid)):
-                                self.current_piece.rotation -= 1
-                    
-
-                    # temporary keybindings to control and test the warning and alarm
-                    if event.key == pygame.K_1:
-                        global warning_visible
-                        warning_visible = True
-                        global user_inactive
-                        user_inactive = True
-
-                    if event.key == pygame.K_2:
-                        self.stop_warning()
-                    if event.key == pygame.K_9:
-                        self.sound_alarm(alarm_audio_location)
-                    if event.key == pygame.K_0:
-                        self.stop_alarm()
-
-                        
-
-
+    
             # Convert the current piece's shape format to a list of positions
             shape_pos = self.convert_shape_format(self.current_piece)
 
@@ -693,12 +659,10 @@ class TetrisGameTrain:
             
             self.draw_window(win, grid, score)
             self.draw_next_shape(next_piece, win)
-                
-                
-            if (user_inactive):
-                self.display_warning(win, warning_image_location)
+            pygame.display.update()
 
-            pygame.display.flip()
+
+            #pygame.display.flip()
 
             # every iteration, we check if the user has lost the game
             # if he loses, we end the game and display GAME OVER
