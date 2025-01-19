@@ -17,13 +17,13 @@ class Agent:
         self.memory = deque(maxlen=MAX_MEMORY)  # Stores AI data
         self.model = Linear_QNet(5, 11, 4)
         self.trainer = Qtrainer(self.model, lr=LR, gamma=self.gamma)
-        self.current_piece = None
-        self.grid = {}
+        #self.current_piece = None
+        #self.grid = {}
 
     def set_state(self, game):
-        #self.grid = game.grid
+        self.grid = game.grid
         self.current_piece = game
-        state = [game.current_piece[0], game.current_piece[1], game.current_piece[2], game.current_piece[3]]
+        state = [game.current_piece[0], game.current_piece[1], game.current_piece[2], game.current_piece[3],game.grid]
         return state
 
     def remember(self, state, action, reward, next_state, done):
@@ -46,6 +46,7 @@ class Agent:
         if random.randint(0, 200) < self.epsilon:
             move = random.randint(0, 2)
             final_move[move] = 1
+        
         else:
             state0 = torch.tensor(state, dtype=torch.float)
             prediction = self.model(state0)
@@ -76,22 +77,22 @@ class Agent:
 
             final_move = self.get_action(state_old)
 
-            reward, done, score = game.play_step(final_move)
+            #reward, done, score = game.play_step(final_move)
             new_state = self.set_state(game)
 
             self.train_short_memory(state_old, final_move, reward, new_state, done)
             self.remember(state_old, final_move, reward, new_state, done)
             
-            if done:
+            if self.done:
                 game.main()
                 self.n_game += 1
                 self.train_long_memory()
 
-                if score > best_score:
+                if self.score > best_score:
                     best_score = score
                     self.model.save()
 
-                print(f'Game {self.n_game}, Score {score}, Best Score {best_score}')
+                print(f'Game {self.n_game}, Score {self.score}, Best Score {best_score}')
 
 
 if __name__ == '__main__':

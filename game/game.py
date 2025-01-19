@@ -207,6 +207,7 @@ class TetrisGame:
         self.score = 0
         self.running = True
         self.ai_control = False
+        self.reward = 0
 
 
     # This function creates a grid, the dictionnary 'locked_positions' to store the positions of the pieces 
@@ -616,13 +617,16 @@ class TetrisGame:
 
                 rows_cleared = self.clear_rows(grid, locked_positions)
                 if rows_cleared > 3: 
-                    #TODO reward
+                    reward+=10
                     score += rows_cleared * 800
                 elif rows_cleared > 2:
+                    reward+=7
                     score += rows_cleared * 500
-                elif rows_cleared > 1: 
+                elif rows_cleared > 1:
+                    reward+=4 
                     score += rows_cleared * 300
                 else:
+                    reward+=2
                     score += rows_cleared * 100
                 
 
@@ -639,10 +643,10 @@ class TetrisGame:
             # every iteration, we check if the user has lost the game
             # if he loses, we end the game and display GAME OVER
             if self.check_lost(locked_positions):
-                #TODO
                 self.draw_text_middle(win, "GAME OVER", 80, (255, 255, 255))
                 pygame.display.update()
                 pygame.time.delay(2000)
+                self.reward -= 100
                 run = False
 
 
