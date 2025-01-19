@@ -9,12 +9,11 @@ def run_head_tracking(event_queue):
 
     NOT_LOOKING_AWAY = -1
     LOOKING_AWAY_5 = 0
-    LOOKING_AWAY_10 = 2
+    LOOKING_AWAY_10 = 1
 
     looking_away_start_time = None
-    looking_away_duration_threshold = 5
     consecutive_away_frames = 0
-    max_tolerance_frames = 5
+    max_tolerance_frames = 10
     looking = NOT_LOOKING_AWAY
 
     def calculate_angle(a, b, c):

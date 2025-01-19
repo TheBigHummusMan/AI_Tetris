@@ -6,6 +6,7 @@ import multiprocessing
 import random
 import pygame
 import numpy as np
+import os
 
 from gaze_tracking import eye_tracking
 
@@ -47,8 +48,13 @@ top_left_x = (screen_width - play_width) // 2
 top_left_y = screen_height - play_height
 
 pygame.mixer.init()
-warning_image_location = 'game/images/warning_image.png'
-alarm_audio_location = 'game/audio/alarm_audio.mp3'
+if os.name == 'nt':
+    warning_image_location = 'images\\warning_image.png'
+    alarm_audio_location = 'audio\\alarm_audio.mp3'
+else:
+    warning_image_location = 'game/images/warning_image.png'
+    alarm_audio_location = 'game/audio/alarm_audio.mp3'
+
 warning_border_width = 20
 warning_visible = False
 user_inactive = False
@@ -518,7 +524,6 @@ class TetrisGameTrain:
         pygame.mixer.music.stop()
     
     def play_step(self,action):
-        print("retardismo")
         self.current_piece_stat = self.current_piece.get_stats()
         if self.ai_control:
             if np.array_equal(action, [1, 0, 0,0]):
@@ -648,14 +653,13 @@ class TetrisGameTrain:
                         previous = "NOT_LOOKING_AWAY"
                         # if the user ignores the warnings, we sound the alarms
                         if event == (previous := "LOOKING_AWAY_5"):
-                            self.sound_alarm(alarm_audio_location)
+                            self.display_warning(win, warning_image_location)
                         if event == (previous := "LOOKING_AWAY_10"):
                             self.sound_alarm(alarm_audio_location)
-                        if event == "NOT_LOOKING_AWAY" and previous == "LOOKING_AWAY_5":
-                            self.stop_warning()
-                        if event == "NOT_LOOKING_AWAY" and previous == "LOOKING_AWAY_10":
+                        if event == "NOT_LOOKING_AWAY":
                             self.stop_warning()
                             self.stop_alarm()
+                            previous = "NOT_LOOKING_AWAY"
 
                         
 
@@ -708,8 +712,6 @@ class TetrisGameTrain:
             self.draw_next_shape(next_piece, win)
                 
 
-            if (user_inactive):
-                self.display_warning(win, warning_image_location)
 
             pygame.display.flip()
 
