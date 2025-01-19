@@ -198,7 +198,8 @@ while cap.isOpened():
                     consecutive_away_frames = 1
                 else:
                     consecutive_away_frames += 1
-                    looking_away_duration = time.time() - looking_away_start_time > looking_away_duration_threshold
+                    looking_away_duration = time.time() - looking_away_start_time
+                    print(looking_away_duration)
                     if 10 > looking_away_duration > 5:
                         print("User has been looking away for 5 seconds or more!")
                     elif looking_away_duration > 10:
