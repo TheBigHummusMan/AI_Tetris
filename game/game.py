@@ -511,8 +511,8 @@ class TetrisGame:
                     change_piece = True
                     self.ai_control = True
 
-            if self.ai_control:
-                    print("ai controling")
+            #if self.ai_control:
+                    #print("ai controling")
 
             # We check for many events, keystrokes, and we have different things happening depending on input
             for event in pygame.event.get():
