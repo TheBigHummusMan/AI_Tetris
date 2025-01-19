@@ -1,4 +1,4 @@
-def run_head_tracking(event_queue):
+def run_head_tracking(event_queue, kill):
 
     import cv2
     import mediapipe as mp
@@ -202,10 +202,10 @@ def run_head_tracking(event_queue):
                         consecutive_away_frames += 1
                         looking_away_duration = time.time() - looking_away_start_time
                         print(looking_away_duration)
-                        if 10 > looking_away_duration > 5:
-                            if looking != LOOKING_AWAY_5: event_queue.put("LOOKING_AWAY_5")
-                        elif looking_away_duration > 10:
-                            if looking != LOOKING_AWAY_10: event_queue.put("LOOKING_AWAY_10")
+                        if 8 > looking_away_duration > 0:
+                           event_queue.put("LOOKING_AWAY_5")
+                        elif looking_away_duration > 8:
+                            event_queue.put("LOOKING_AWAY_10")
                 else:
                     if 0 < consecutive_away_frames < max_tolerance_frames:
                         # Allow skipped frames without resetting the timer
@@ -214,7 +214,7 @@ def run_head_tracking(event_queue):
                         # Reset tracking if user is no longer looking away
                         looking_away_start_time = None
                         consecutive_away_frames = 0
-                        if looking != NOT_LOOKING_AWAY: event_queue.put("NOT_LOOKING_AWAY")
+                        event_queue.put("NOT_LOOKING_AWAY")
 
                 # Optional: Draw all detected landmarks on the face
                 mp_drawing.draw_landmarks(
@@ -242,7 +242,8 @@ def run_head_tracking(event_queue):
 
         # Display the processed frame
         cv2.imshow("Eye Tracking with Mediapipe", frame)
-
+        if not(kill.empty()) and kill.get() == "done":
+            break
         # Exit the loop if the user presses the 'q' key
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break

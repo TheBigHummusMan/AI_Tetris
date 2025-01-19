@@ -8,6 +8,7 @@ import pygame
 import numpy as np
 import os
 
+
 from gaze_tracking import eye_tracking as et
 
 # creating the data structure for pieces
@@ -215,6 +216,9 @@ class TetrisGameTrain:
         self.ai_control = False
         self.reward = 0
         self.run = None
+        self.event_queue = None
+        self.p1 = None
+        self.kill = None
         self.total_rows_cleared = 0
         self.current_piece_stat = None
 
@@ -540,12 +544,10 @@ class TetrisGameTrain:
                     self.current_piece.rotation -= 1
             if np.array_equal(action, [0, 0, 0,1]):
                 pass
-            
-
 
     # Main method. This is where the good stuff is
     def main(self,win):
-        
+
         # We start with no locked positions
         locked_positions = {}
         
@@ -567,14 +569,13 @@ class TetrisGameTrain:
         level_time = 0
         score = 0
 
-
-
         # Event queue for communication between processes
-        event_queue = multiprocessing.Queue()
+        self.event_queue = multiprocessing.Queue()
+        self.kill = multiprocessing.Queue()
+        self.p1 = multiprocessing.Process(target=et.run_head_tracking, args=(self.event_queue, self.kill))
 
         # Start the background process for eye tracking
-        p1 = multiprocessing.Process(target=et.run_head_tracking, args=(event_queue,))
-        p1.start()
+        self.p1.start()
 
         run = True
 
@@ -607,12 +608,16 @@ class TetrisGameTrain:
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
+                    self.kill.put("done")
                     run = False
-                    p1.join()
+                    self.p1.terminate()
+                    self.p1.join()
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_ESCAPE:
+                        self.kill.put("done")
                         run = False
-                        p1.join()
+                        self.p1.terminate()
+                        self.p1.join()
                         print("break")
                         
                 if event.type == pygame.KEYDOWN:
@@ -648,20 +653,20 @@ class TetrisGameTrain:
                         global user_inactive
                         user_inactive = True
 
-                    if not event_queue.empty():
-                        event = event_queue.get()
+                    print(self.event_queue.empty())
+                    if not self.event_queue.empty():
+                        event = self.event_queue.get()
                         previous = "NOT_LOOKING_AWAY"
                         # if the user ignores the warnings, we sound the alarms
-                        if event == (previous := "LOOKING_AWAY_5"):
+                        if event == "LOOKING_AWAY_5":
+                            warning_visible = True
                             self.display_warning(win, warning_image_location)
-                        if event == (previous := "LOOKING_AWAY_10"):
+                        if event == "LOOKING_AWAY_10":
                             self.sound_alarm(alarm_audio_location)
                         if event == "NOT_LOOKING_AWAY":
+                            warning_visible = False
                             self.stop_warning()
                             self.stop_alarm()
-                            previous = "NOT_LOOKING_AWAY"
-
-                        
 
 
             # Convert the current piece's shape format to a list of positions
@@ -718,13 +723,14 @@ class TetrisGameTrain:
             # every iteration, we check if the user has lost the game
             # if he loses, we end the game and display GAME OVER
             if self.check_lost(locked_positions):
+                self.kill.put("done")
                 self.draw_text_middle(win, "GAME OVER", 80, (255, 255, 255))
                 pygame.display.update()
                 pygame.time.delay(2000)
                 self.reward -= 100
                 run = False
-
-        p1.join()
+                self.p1.terminate()
+                self.p1.join()
 
     def main_menu(self, win):
         run = True
@@ -771,7 +777,10 @@ class TetrisGameTrain:
             # listening for events
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
+                    self.kill.put("done")
                     run = False
+                    self.p1.terminate()
+                    self.p1.join()
 
                 if event.type == pygame.MOUSEBUTTONDOWN:  # Check for mouse click
                     mouse_pos = pygame.mouse.get_pos()  # Get mouse position
