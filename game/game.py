@@ -520,6 +520,7 @@ class TetrisGameTrain:
         pygame.mixer.music.stop()
     
     def play_step(self,action):
+        print("retardismo")
         self.current_piece_stat = self.current_piece.get_stats()
         if self.ai_control:
             if np.array_equal(action, [1, 0, 0,0]):
@@ -606,8 +607,8 @@ class TetrisGameTrain:
                         
                 if event.type == pygame.KEYDOWN:
                     self.ai_control = False
-                #if not self.ai_control:
-                #    self.play_step(self,agent.action)
+                #if self.ai_control:
+                 #   self.play_step(self,agent.action)
                 if(not self.ai_control and event.type == pygame.KEYDOWN):
                     if event.key == pygame.K_LEFT:
                         self.current_piece.x -= 1
@@ -711,69 +712,10 @@ class TetrisGameTrain:
 
 
 
-    def main_menu(self,win):
-        run = True
-
-        font = pygame.font.SysFont('Tahoma', 40, bold = True)
-        # Define button dimensions for "PLAY"
-        play_label = font.render("PLAY", 1, (255, 255, 255))
-        play_x = top_left_x + play_width / 2 - (play_label.get_width() / 2)
-        play_y = top_left_y + play_height / 2 - (play_label.get_height() / 2) - 100
-        play_button = pygame.Rect(play_x - 20, play_y - 10, play_label.get_width() + 40, play_label.get_height() + 20)
-
-        # Define button dimensions for "CHECK AI LOGS" (optional)
-        ai_label = font.render("CHECK AI LOGS", 1, (255, 255, 255))
-        ai_x = top_left_x + play_width / 2 - (ai_label.get_width() / 2)
-        ai_y = top_left_y + play_height / 2 - (ai_label.get_height() / 2) - 25
-        ai_button = pygame.Rect(ai_x - 20, ai_y - 10, ai_label.get_width() + 40, ai_label.get_height() + 20)
-
-        # Main menu loop
-        while run:
-            win.fill((0, 0, 0))
-            self.draw_text_middle_up(win, 'Welcome to TETRIS', 60, (255, 255, 255))
-            
-        # Draw buttons
-            pygame.draw.rect(win, (50, 50, 50), play_button)  # Play button background
-            win.blit(play_label, (play_x, play_y))            # Play button text
-
-            pygame.draw.rect(win, (50, 50, 50), ai_button)    # AI Logs button background
-            win.blit(ai_label, (ai_x, ai_y))                  # AI Logs button text
-
-            pygame.display.update()
-
-
-
-            mouse_pos = pygame.mouse.get_pos()  # Get mouse position
-
-            # Check if the mouse is over the "PLAY" button and change the cursor
-            if play_button.collidepoint(mouse_pos):
-                pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_HAND)  # Hand cursor
-            elif ai_button.collidepoint(mouse_pos):
-                pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_HAND)  # Hand cursor
-            else:
-                pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_ARROW)  # Default arrow cursor
-
-            pygame.display.update()
-
-            # listening for events 
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    run = False
-                
-                if event.type == pygame.MOUSEBUTTONDOWN:  # Check for mouse click
-                    mouse_pos = pygame.mouse.get_pos()  # Get mouse position
-                    if play_button.collidepoint(mouse_pos):  # Check if "PLAY" button is clicked
-                        self.main(win)  # Start the game
-                    elif ai_button.collidepoint(mouse_pos):  # Check if "CHECK AI LOGS" button is clicked
-                        print("AI Logs button clicked!")  # Placeholder for AI Logs functionality
-                
-        
-        # If we make it here, it means player is done, we quit
-        pygame.display.quit()
-        
+    
 
 # Initialize the window, the caption, and we START
 win = pygame.display.set_mode((screen_width, screen_height))
 game = TetrisGameTrain(win,screen_width,screen_height,play_height,play_height)
 pygame.display.set_caption('TETRIS')
-game.main_menu(win)
+#game.main_menu(win)

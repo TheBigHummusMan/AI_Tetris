@@ -25,7 +25,7 @@ class Linear_QNet(nn.Module):
 class Qtrainer:
     def __init__(self,model,lr,gamma):
         self.lr = lr
-        self.gamme = gamma
+        self.gamma = gamma
         self.model = model
         self.optimizer = optim.Adam(model.parameters(), lr)
         self.criterion = nn.MSELoss()
@@ -50,10 +50,10 @@ class Qtrainer:
         for idx in range(len(done)):
             Q_new = reward[idx]
             if not done[idx]:
-                Q_new = reward[idx + self.gamma + torch.max(self.model(next_state[idx]))]
-            target[idx][torch.argmax(action).item] = Q_new
+                Q_new = reward[idx] + self.gamma + torch.max(self.model(next_state[idx]))
+            target[idx][torch.argmax(action[idx]).item()] = Q_new
 
         self.optimizer.zero_grad()
-        loss = self.criterion(target.pred)
+        loss = self.criterion(target, pred)
         loss.backward()
-        self.op.step()
+        self.optimizer.step()

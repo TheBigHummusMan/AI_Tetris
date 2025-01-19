@@ -18,7 +18,7 @@ class Agent:
         self.epsilon = 80  # Randomness of the machine
         self.gamma = 0.9  # Discount rate (should be smaller than 1)
         self.memory = deque(maxlen=MAX_MEMORY)  # Stores AI data
-        self.model = Linear_QNet(5, 11, 4)
+        self.model = Linear_QNet(8, 15, 4)
         self.trainer = Qtrainer(self.model, lr=LR, gamma=self.gamma)
         self.current_piece = None
         self.grid = {}
@@ -89,13 +89,13 @@ class Agent:
             self.train_short_memory(state_old, final_move, game.reward, new_state, game.run)
             self.remember(state_old, final_move, game.reward, new_state, game.run)
             
-            if self.done:
+            if game.run:
                 game.main()
                 self.n_game += 1
                 self.train_long_memory()
 
                 if self.score > best_score:
-                    best_score = score
+                    best_score = self.score
                     self.model.save()
 
                 print(f'Game {self.n_game}, Score {self.score}, Best Score {best_score}')
