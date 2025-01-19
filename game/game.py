@@ -6,6 +6,7 @@
 
 import random
 import pygame
+import numpy as np
 
 
 
@@ -186,6 +187,8 @@ class Piece(object):
         self.color = shape_colors[shapes_list.index(shape)]
         # Initialize the rotation of the piece to 0
         self.rotation = 0
+    def get_stats(self):
+        return [self.x,self.y,self.shape,self.rotation]
 
 class TetrisGame:
     def __init__(self,win,screen_width,screen_height,play_width,play_height):
@@ -195,9 +198,9 @@ class TetrisGame:
         self.play_width = play_width
         self.play_height = play_height
         self.locked_positions = {}
-        self.grid = self.create_grid()
-        self.current_piece = self.get_shape()
-        self.next_piece = self.get_shape()
+        self.grid = self.create_grid(self.locked_positions)
+        self.current_piece = self.get_shape().get_stats()
+        self.next_piece = self.get_shape().get_stats()
         self.fall_time = 0
         self.fall_speed = 0.3
         self.level_time = 0
@@ -454,6 +457,24 @@ class TetrisGame:
     # Function that stops the alarm from ringing
     def stop_alarm(self):
         pygame.mixer.music.stop()
+    
+    def play_step(self,action):
+        if self.ai_control:
+            if np.array_equal(action, [1, 0, 0,0]):
+                self.current_piece.x -= 1
+                if not(self.valid_space(self.current_piece, self.grid)):
+                    self.current_piece.x += 1
+            if np.array_equal(action, [0, 1, 0,0]):
+                self.current_piece.x += 1
+                if not(self.valid_space(self.current_piece, self.grid)):
+                    self.current_piece.x -= 1
+            if np.array_equal(action, [0, 0, 1,0]):
+                self.current_piece.rotation += 1
+                if not(self.valid_space(self.current_piece, self.grid)):
+                    self.current_piece.rotation -= 1
+            if np.array_equal(action, [0, 0, 0,1]):
+                pass
+            
 
 
     # Main method. This is where the good stuff is
@@ -511,20 +532,23 @@ class TetrisGame:
                     change_piece = True
                     ai_control = True
 
+            if self.ai_control:
+                print("ai controling")
             # We check for many events, keystrokes, and we have different things happening depending on input
+
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     run = False
-                
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_ESCAPE:
                         run = False
                         print("break")
+                        
                 if event.type == pygame.KEYDOWN:
                     self.ai_control = False
-                if self.ai_control:
-                    print("ai controling")
-                if(not self.ai_control and event.type == pygame.KEYDOWN):
+                #if not self.ai_control:
+                #    self.play_step(self,agent.action)
+                elif(not self.ai_control and event.type == pygame.KEYDOWN):
                     if event.key == pygame.K_LEFT:
                         current_piece.x -= 1
                         if not(self.valid_space(current_piece, grid)):
@@ -592,6 +616,7 @@ class TetrisGame:
 
                 rows_cleared = self.clear_rows(grid, locked_positions)
                 if rows_cleared > 3: 
+                    #TODO reward
                     score += rows_cleared * 800
                 elif rows_cleared > 2:
                     score += rows_cleared * 500
@@ -614,6 +639,7 @@ class TetrisGame:
             # every iteration, we check if the user has lost the game
             # if he loses, we end the game and display GAME OVER
             if self.check_lost(locked_positions):
+                #TODO
                 self.draw_text_middle(win, "GAME OVER", 80, (255, 255, 255))
                 pygame.display.update()
                 pygame.time.delay(2000)
