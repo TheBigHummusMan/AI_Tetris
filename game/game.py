@@ -8,7 +8,7 @@ import pygame
 import numpy as np
 import os
 
-from gaze_tracking import eye_tracking
+from gaze_tracking import eye_tracking as et
 
 # creating the data structure for pieces
 # setting up global vars
@@ -573,7 +573,7 @@ class TetrisGameTrain:
         event_queue = multiprocessing.Queue()
 
         # Start the background process for eye tracking
-        p1 = multiprocessing.Process(target=eye_tracking.run_head_tracking, args=(event_queue,))
+        p1 = multiprocessing.Process(target=et.run_head_tracking, args=(event_queue,))
         p1.start()
 
         run = True
