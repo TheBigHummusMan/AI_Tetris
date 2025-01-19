@@ -509,7 +509,10 @@ class TetrisGame:
                 if not(self.valid_space(current_piece, grid)) and current_piece.y > 0:
                     current_piece.y -= 1
                     change_piece = True
-                    ai_control = True
+                    self.ai_control = True
+
+            if self.ai_control:
+                    print("ai controling")
 
             # We check for many events, keystrokes, and we have different things happening depending on input
             for event in pygame.event.get():
@@ -517,13 +520,14 @@ class TetrisGame:
                     run = False
                 
                 if event.type == pygame.KEYDOWN:
+                    self.ai_control = False
+                    
+
                     if event.key == pygame.K_ESCAPE:
                         run = False
                         print("break")
-                if event.type == pygame.KEYDOWN:
-                    self.ai_control = False
-                if self.ai_control:
-                    print("ai controling")
+
+
                 if(not self.ai_control and event.type == pygame.KEYDOWN):
                     if event.key == pygame.K_LEFT:
                         current_piece.x -= 1
