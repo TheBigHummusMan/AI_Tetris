@@ -469,7 +469,31 @@ class TetrisGameTrain:
         self.draw_grid(surface, grid)
     
     
-
+    def play_step(self,action):
+        print("checking if can ai")
+        if self.ai_control:
+            if np.array_equal(action, [1, 0, 0,0]):
+                self.current_piece.x -= 1
+                print('left')
+                if not(self.valid_space(self.current_piece, self.grid)):
+                    self.current_piece.x += 1
+            elif np.array_equal(action, [0, 1, 0,0]):
+                self.current_piece.x += 1
+                print('right')
+                if not(self.valid_space(self.current_piece, self.grid)):
+                    self.current_piece.x -= 1
+            elif np.array_equal(action, [0, 0, 1,0]):
+                self.current_piece.rotation += 1
+                print('rotate')
+                if not(self.valid_space(self.current_piece, self.grid)):
+                    self.current_piece.rotation -= 1
+            elif np.array_equal(action, [0, 0, 0,1]):
+                print('nothing')
+            else:
+                print("how did you get here?")
+        self.draw_window(self.win,self.grid,self.score)
+        pygame.display.update()
+        return self.reward, not self.run, self.score
             
 
 
@@ -566,31 +590,6 @@ class TetrisGameTrain:
 
         # Main game loop that keeps the game running as long as run = True
         while run:
-            def play_step(self,action):
-                print("checking if can ai")
-                if self.ai_control:
-                    if np.array_equal(action, [1, 0, 0,0]):
-                        self.current_piece.x -= 1
-                        print('left')
-                        if not(self.valid_space(self.current_piece, self.grid)):
-                            self.current_piece.x += 1
-                    elif np.array_equal(action, [0, 1, 0,0]):
-                        self.current_piece.x += 1
-                        print('right')
-                        if not(self.valid_space(self.current_piece, self.grid)):
-                            self.current_piece.x -= 1
-                    elif np.array_equal(action, [0, 0, 1,0]):
-                        self.current_piece.rotation += 1
-                        print('rotate')
-                        if not(self.valid_space(self.current_piece, self.grid)):
-                            self.current_piece.rotation -= 1
-                    elif np.array_equal(action, [0, 0, 0,1]):
-                        print('nothing')
-                    else:
-                        print("how did you get here?")
-                self.draw_window(self.win,self.grid,self.score)
-                pygame.display.update()
-                return self.reward, not self.run, self.score
             grid = self.create_grid(locked_positions)
             fall_time += clock.get_rawtime()
             level_time += clock.get_rawtime()
