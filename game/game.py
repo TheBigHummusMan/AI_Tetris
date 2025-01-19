@@ -187,478 +187,503 @@ class Piece(object):
         # Initialize the rotation of the piece to 0
         self.rotation = 0
 
+class TetrisGame:
+    def __init__(self,win,screen_width,screen_height,play_width,play_height):
+        self.win = win
+        self.screen_width = screen_width
+        self.screen_height = screen_height
+        self.play_width = play_width
+        self.play_height = play_height
+        self.locked_positions = {}
+        self.grid = self.create_grid()
+        self.current_piece = self.get_shape()
+        self.next_piece = self.get_shape()
+        self.fall_time = 0
+        self.fall_speed = 0.3
+        self.level_time = 0
+        self.score = 0
+        self.running = True
+        self.ai_control = False
 
 
-# This function creates a grid, the dictionnary 'locked_positions' to store the positions of the pieces 
-# that are locked in the grid. In other words, theres a block there
-def create_grid(locked_positions = {}):
+    # This function creates a grid, the dictionnary 'locked_positions' to store the positions of the pieces 
+    # that are locked in the grid. In other words, theres a block there
+    def create_grid(self,locked_positions = {}):
 
-    # initializing each square to black originally (no block is there yet)
-    grid = [[(0, 0, 0) for x in range(10)] for x in range(20)]
+        # initializing each square to black originally (no block is there yet)
+        grid = [[(0, 0, 0) for x in range(10)] for x in range(20)]
 
-    # We iterate through each square of the grid, and if it belongs to the dictionnary (theres a block there)
-    # we change the color of the square to the color of the block
-    for i in range(len(grid)):
-        for j in range(len(grid[1])):
-            if (j, i) in locked_positions:
-                c = locked_positions[(j, i)]
-                grid[i][j] = c
-    
-    return grid
-
-# Function that simply generates a shape and returns it
-def get_shape(): 
-    return Piece(5, 0,random.choice(shapes_list))
-
-def draw_next_shape(shape, surface):
-    # Create a font object to render the 'Next Shape:' label
-    font = pygame.font.SysFont('Tahoma', 30)
-    # Render the 'Next Shape:' label with white color
-    label = font.render('Next Shape:', 1, (255, 255, 255))
-
-    # Calculate the x and y coordinates to draw the next shape
-    sx = top_left_x + play_width + 50
-    sy = top_left_y + play_height/2 - 100
-
-    # Get the current shape format based on its rotation
-    format = shape.shape[shape.rotation % len(shape.shape)]
-
-    # Iterate over each line in the shape format
-    for i, line in enumerate(format):
-        # Convert the line to a list of characters
-        row = list(line)
-        # Iterate over each character in the line
-        for j, column in enumerate(row):
-            # If the character is '0', draw a rectangle at the corresponding position
-            if column == '0':
-                pygame.draw.rect(surface, shape.color, (sx + j*block_size, sy + i*block_size, block_size, block_size), 0)
-
-    # Draw the 'Next Shape:' label at the calculated position
-    surface.blit(label, (sx + 10, sy - 30))
-
-
-# Method to write text in the upper middle section of the window
-def draw_text_middle_up(surface, text, size, color):
-    font = pygame.font.SysFont('Tahoma', size, bold = True)
-    label = font.render(text, 1, color)
-
-    surface.blit(label, (top_left_x + play_width/2 - (label.get_width()/2), top_left_y + play_height/2 - (label.get_height()/2) - 250))
-
-
-#Method to write text in the middle of the window
-def draw_text_middle(surface, text, size, color):
-    font = pygame.font.SysFont('Tahoma', size, bold = True)
-    label = font.render(text, 1, color)
-
-    surface.blit(label, (top_left_x + play_width/2 - (label.get_width()/2), top_left_y + play_height/2 - (label.get_height()/2)))
-
-
-
-# Function to clear the rows after a row has been completed.
-def clear_rows(grid, locked):
-
-    inc = 0
-    for i in range(len(grid) - 1, -1, -1):
-        row = grid[i]
-
-        # If (0,0,0) doesnt exist then the row is full of coloured cubes
-        if (0, 0, 0) not in row:
-            inc += 1
-            ind = i
-
-            # Go through each square in the row and delete them
-            for j in range(len(row)):
-                try: 
-                    del locked[(j, i)]
-                except:
-                    continue
-    
-
-    # If there was a row deleted, then we move all the rows down
-    if inc > 0:
-
-        # We sort the list of locked keys, sorted by their y values
-        for key in sorted(list(locked), key = lambda x: x[1])[::-1]:
-            x, y = key
-
-            # If a square higher than a deleted row, then we need to move it down
-            if y < ind:
-
-                # Creates a new square, inc spots lower than it was before
-                newKey = (x, y + inc)
-
-                # This replaces the old square with the new one in the locked positions dictionary
-                locked[newKey] = locked.pop(key)
-    
-    return inc
-
-
-
-# We simply check if the blocked positions have reached the top of the grid
-def check_lost(positions):
-    for pos in positions:
-        x, y = pos
-        if y < 1:
-            return True
-    
-    return False
-
-
-
-def convert_shape_format(shape):
-    # Initialize an empty list to store the positions of the shape
-    positions = []
-
-    # Get the current shape format based on its rotation
-    format = shape.shape[shape.rotation % len(shape.shape)]
-
-    # Iterate over each line in the shape format
-    for i, line in enumerate(format):
-        # Convert the line to a list of characters
-        row = list(line)
-        # Iterate over each character in the line
-        for j, column in enumerate(row):
-            # If the character is '0', it represents a block, so add its position to the list
-            if column == '0':
-                # Calculate the position of the block based on the shape's x and y coordinates
-                positions.append((shape.x + j, shape.y + i))
-
-    # Offset the positions so they display correctly
-    for i, pos in enumerate(positions):
-        positions[i] = (pos[0] - 2, pos[1] - 4)
-
-    # Return the list of positions
-    return positions
-
-def valid_space(shape, grid):
-    # only a valid position if the position is blank
-    accepted_pos = [[(j, i) for j in range(10) if grid[i][j] == (0, 0, 0)] for i in range(20)]
-
-    # This line changes from [[(0,1)], [(2,3)]] -> [(0,1), (2,3)]
-    accepted_pos = [j for sub in accepted_pos for j in sub]
-
-    formatted = convert_shape_format(shape) 
-
-    for pos in formatted:
-        if pos not in accepted_pos:
-            if pos[1] > -1:
-                return False
-    
-    return True
-
-
-
-# Function to draw the grid, self explanatory
-def draw_grid(surface, grid):
-    # making the variables shorter and easier to write
-    sx = top_left_x
-    sy = top_left_y
-
-
-    # Drawing each square of the grid
-    for i in range(len(grid)):
-        pygame.draw.line(surface, (128, 128, 128), (sx, sy + i*block_size), (sx+play_width, sy + i*block_size))
-        for j in range(len(grid[i])):
-            pygame.draw.line(surface, (128, 128, 128), (sx + j*block_size, sy), (sx + j*block_size, sy+play_height))
-
-
-
-# Creating the whole window
-def draw_window(surface, grid, score=0):
-    surface.fill((0, 0, 0))
-
-    pygame.font.init()
-    font = pygame.font.SysFont('Tahoma', 60)
-    label = font.render('Tetris', 1, (255, 255, 255))
-
-    # This draws the label we just created centered in the screen
-    # The 30 at the end moves the label down 30 from the top 
-    surface.blit(label, (top_left_x + play_width/2 - (label.get_width()/2), 30))
-
-    # current score
-    font = pygame.font.SysFont('Tahoma', 30)
-    label = font.render('Score: ' + str(score), 1, (255, 255, 255))
-
-    sx = top_left_x + play_width + 50
-    sy = top_left_y + play_height/2 - 100
-
-    surface.blit(label, (sx + 0, sy - 280))
-
-    for i in range(len(grid)):
-        for j in range(len(grid[i])):
-            # We draw the color (grid[i][j]) onto the surface, at the position we want
-            # toplefty + i*block_size is the true 'y' position, same thing for 'x'
-            # We then specify, the width and length of drawing, and the '0' means we fill the square (not a border)
-            pygame.draw.rect(surface, grid[i][j], (top_left_x + j*block_size, top_left_y + i*block_size, block_size, block_size), 0)
-    
-    
-    pygame.draw.rect(surface, (255, 0, 0), (top_left_x,top_left_y, play_width, play_height), 4)
-
-    draw_grid(surface, grid)
-
-
-
-# Method that displays the warning once the user leaves or looks away for too long
-def display_warning(surface, image_location):
-    global warning_visible
-
-
-    # If the warning hasnt been turned off, we display the images, as well as the red border and the message
-    if warning_visible:    
-        im = pygame.image.load(image_location)
-        im = pygame.transform.scale(im, (100, 100))
-        surface.blit(im, (screen_width - play_width + 60, screen_height - play_height))
-        surface.blit(im, (screen_width - (2*play_width) - 60, screen_height - play_height))
+        # We iterate through each square of the grid, and if it belongs to the dictionnary (theres a block there)
+        # we change the color of the square to the color of the block
+        for i in range(len(grid)):
+            for j in range(len(grid[1])):
+                if (j, i) in locked_positions:
+                    c = locked_positions[(j, i)]
+                    grid[i][j] = c
         
-        # Top Border
-        pygame.draw.rect(surface, (255, 0, 0), (0, 0, screen_width, warning_border_width))
-        # Bottom border
-        pygame.draw.rect(surface, (255, 0, 0), (0, screen_height - warning_border_width, screen_width, warning_border_width))
-        # Left border
-        pygame.draw.rect(surface, (255, 0, 0), (0, 0, warning_border_width, screen_height))
-        # Right border
-        pygame.draw.rect(surface, (255, 0, 0), (screen_width - warning_border_width, 0, warning_border_width, screen_height))
+        return grid
 
-        pygame.draw.rect(surface, (50, 50, 50), (0, (screen_height//2) + 25, 1000, 50))
-        draw_text_middle(win, "WARNING, COME BACK TO GAME", 40, (255, 0, 0))
+    # Function that simply generates a shape and returns it
+    def get_shape(self): 
+        return Piece(5, 0,random.choice(shapes_list))
 
-# Function to stop the warning (remove red borders and images)
-def stop_warning():
-    global warning_visible
-    warning_visible = False
-    stop_alarm()
+    def draw_next_shape(self,shape, surface):
+        # Create a font object to render the 'Next Shape:' label
+        font = pygame.font.SysFont('Tahoma', 30)
+        # Render the 'Next Shape:' label with white color
+        label = font.render('Next Shape:', 1, (255, 255, 255))
 
-# Function that sounds the alarm
-def sound_alarm(audio_location):
-    pygame.mixer.music.load(audio_location)
-    pygame.mixer.music.play(-1)
+        # Calculate the x and y coordinates to draw the next shape
+        sx = top_left_x + play_width + 50
+        sy = top_left_y + play_height/2 - 100
+
+        # Get the current shape format based on its rotation
+        format = shape.shape[shape.rotation % len(shape.shape)]
+
+        # Iterate over each line in the shape format
+        for i, line in enumerate(format):
+            # Convert the line to a list of characters
+            row = list(line)
+            # Iterate over each character in the line
+            for j, column in enumerate(row):
+                # If the character is '0', draw a rectangle at the corresponding position
+                if column == '0':
+                    pygame.draw.rect(surface, shape.color, (sx + j*block_size, sy + i*block_size, block_size, block_size), 0)
+
+        # Draw the 'Next Shape:' label at the calculated position
+        surface.blit(label, (sx + 10, sy - 30))
 
 
-# Function that stops the alarm from ringing
-def stop_alarm():
-    pygame.mixer.music.stop()
+    # Method to write text in the upper middle section of the window
+    def draw_text_middle_up(self,surface, text, size, color):
+        font = pygame.font.SysFont('Tahoma', size, bold = True)
+        label = font.render(text, 1, color)
+
+        surface.blit(label, (top_left_x + play_width/2 - (label.get_width()/2), top_left_y + play_height/2 - (label.get_height()/2) - 250))
 
 
-# Main method. This is where the good stuff is
-def main(win):
-    
-    # We start with no locked positions
-    locked_positions = {}
-    
-    # Create our grid
-    grid = create_grid(locked_positions)
+    #Method to write text in the middle of the window
+    def draw_text_middle(self,surface, text, size, color):
+        font = pygame.font.SysFont('Tahoma', size, bold = True)
+        label = font.render(text, 1, color)
 
-    # Variable that if true will switch the status of a block. It will stop it from falling
-    change_piece = False
+        surface.blit(label, (top_left_x + play_width/2 - (label.get_width()/2), top_left_y + play_height/2 - (label.get_height()/2)))
 
-    # Generate the current and next piece.
-    current_piece = get_shape()
-    next_piece = get_shape()
 
-    # We have these variables to keep track of the blocks' falling speed
-    # and the player's cumulative score over the round
-    clock = pygame.time.Clock()
-    fall_time = 0
-    fall_speed = 0.3
-    level_time = 0
-    score = 0
 
-    # if the user ignores the warnings, we sound the alarms
-    if (user_ignored_warnings):
-        sound_alarm(alarm_audio_location)
+    # Function to clear the rows after a row has been completed.
+    def clear_rows(self,grid, locked):
 
-    run = True
+        inc = 0
+        for i in range(len(grid) - 1, -1, -1):
+            row = grid[i]
 
-    # Main game loop that keeps the game running as long as run = True
-    while run:
+            # If (0,0,0) doesnt exist then the row is full of coloured cubes
+            if (0, 0, 0) not in row:
+                inc += 1
+                ind = i
 
+                # Go through each square in the row and delete them
+                for j in range(len(row)):
+                    try: 
+                        del locked[(j, i)]
+                    except:
+                        continue
         
-        grid = create_grid(locked_positions)
-        fall_time += clock.get_rawtime()
-        level_time += clock.get_rawtime()
-        clock.tick()
+
+        # If there was a row deleted, then we move all the rows down
+        if inc > 0:
+
+            # We sort the list of locked keys, sorted by their y values
+            for key in sorted(list(locked), key = lambda x: x[1])[::-1]:
+                x, y = key
+
+                # If a square higher than a deleted row, then we need to move it down
+                if y < ind:
+
+                    # Creates a new square, inc spots lower than it was before
+                    newKey = (x, y + inc)
+
+                    # This replaces the old square with the new one in the locked positions dictionary
+                    locked[newKey] = locked.pop(key)
         
-        # Every five seconds the speed gets increased
-        if level_time/1000 > 5:
-            level_time = 0
-            if fall_speed > 0.12:
-                fall_speed -= 0.005
+        return inc
 
-        if fall_time/1000 > fall_speed:
-            fall_time = 0
-            current_piece.y += 1
 
-            # If the piece hits the bottom of the grid or another piece, we lock it in place
-            if not(valid_space(current_piece, grid)) and current_piece.y > 0:
-                current_piece.y -= 1
-                change_piece = True
 
-        # We check for many events, keystrokes, and we have different things happening depending on input
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                run = False
+    # We simply check if the blocked positions have reached the top of the grid
+    def check_lost(self,positions):
+        for pos in positions:
+            x, y = pos
+            if y < 1:
+                return True
+        
+        return False
 
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_ESCAPE:
+
+
+    def convert_shape_format(self,shape):
+        # Initialize an empty list to store the positions of the shape
+        positions = []
+
+        # Get the current shape format based on its rotation
+        format = shape.shape[shape.rotation % len(shape.shape)]
+
+        # Iterate over each line in the shape format
+        for i, line in enumerate(format):
+            # Convert the line to a list of characters
+            row = list(line)
+            # Iterate over each character in the line
+            for j, column in enumerate(row):
+                # If the character is '0', it represents a block, so add its position to the list
+                if column == '0':
+                    # Calculate the position of the block based on the shape's x and y coordinates
+                    positions.append((shape.x + j, shape.y + i))
+
+        # Offset the positions so they display correctly
+        for i, pos in enumerate(positions):
+            positions[i] = (pos[0] - 2, pos[1] - 4)
+
+        # Return the list of positions
+        return positions
+
+    def valid_space(self,shape, grid):
+        # only a valid position if the position is blank
+        accepted_pos = [[(j, i) for j in range(10) if grid[i][j] == (0, 0, 0)] for i in range(20)]
+
+        # This line changes from [[(0,1)], [(2,3)]] -> [(0,1), (2,3)]
+        accepted_pos = [j for sub in accepted_pos for j in sub]
+
+        formatted = self.convert_shape_format(shape) 
+
+        for pos in formatted:
+            if pos not in accepted_pos:
+                if pos[1] > -1:
+                    return False
+        
+        return True
+
+
+
+    # Function to draw the grid, self explanatory
+    def draw_grid(self,surface, grid):
+        # making the variables shorter and easier to write
+        sx = top_left_x
+        sy = top_left_y
+
+
+        # Drawing each square of the grid
+        for i in range(len(grid)):
+            pygame.draw.line(surface, (128, 128, 128), (sx, sy + i*block_size), (sx+play_width, sy + i*block_size))
+            for j in range(len(grid[i])):
+                pygame.draw.line(surface, (128, 128, 128), (sx + j*block_size, sy), (sx + j*block_size, sy+play_height))
+
+
+
+    # Creating the whole window
+    def draw_window(self,surface, grid, score=0):
+        surface.fill((0, 0, 0))
+
+        pygame.font.init()
+        font = pygame.font.SysFont('Tahoma', 60)
+        label = font.render('Tetris', 1, (255, 255, 255))
+
+        # This draws the label we just created centered in the screen
+        # The 30 at the end moves the label down 30 from the top 
+        surface.blit(label, (top_left_x + play_width/2 - (label.get_width()/2), 30))
+
+        # current score
+        font = pygame.font.SysFont('Tahoma', 30)
+        label = font.render('Score: ' + str(score), 1, (255, 255, 255))
+
+        sx = top_left_x + play_width + 50
+        sy = top_left_y + play_height/2 - 100
+
+        surface.blit(label, (sx + 0, sy - 280))
+
+        for i in range(len(grid)):
+            for j in range(len(grid[i])):
+                # We draw the color (grid[i][j]) onto the surface, at the position we want
+                # toplefty + i*block_size is the true 'y' position, same thing for 'x'
+                # We then specify, the width and length of drawing, and the '0' means we fill the square (not a border)
+                pygame.draw.rect(surface, grid[i][j], (top_left_x + j*block_size, top_left_y + i*block_size, block_size, block_size), 0)
+        
+        
+        pygame.draw.rect(surface, (255, 0, 0), (top_left_x,top_left_y, play_width, play_height), 4)
+
+        self.draw_grid(surface, grid)
+
+
+
+    # Method that displays the warning once the user leaves or looks away for too long
+    def display_warning(self,surface, image_location):
+        global warning_visible
+
+
+        # If the warning hasnt been turned off, we display the images, as well as the red border and the message
+        if warning_visible:    
+            im = pygame.image.load(image_location)
+            im = pygame.transform.scale(im, (100, 100))
+            surface.blit(im, (screen_width - play_width + 60, screen_height - play_height))
+            surface.blit(im, (screen_width - (2*play_width) - 60, screen_height - play_height))
+            
+            # Top Border
+            pygame.draw.rect(surface, (255, 0, 0), (0, 0, screen_width, warning_border_width))
+            # Bottom border
+            pygame.draw.rect(surface, (255, 0, 0), (0, screen_height - warning_border_width, screen_width, warning_border_width))
+            # Left border
+            pygame.draw.rect(surface, (255, 0, 0), (0, 0, warning_border_width, screen_height))
+            # Right border
+            pygame.draw.rect(surface, (255, 0, 0), (screen_width - warning_border_width, 0, warning_border_width, screen_height))
+
+            pygame.draw.rect(surface, (50, 50, 50), (0, (screen_height//2) + 25, 1000, 50))
+            self.draw_text_middle(win, "WARNING, COME BACK TO GAME", 40, (255, 0, 0))
+
+    # Function to stop the warning (remove red borders and images)
+    def stop_warning(self):
+        global warning_visible
+        warning_visible = False
+        self.stop_alarm()
+
+    # Function that sounds the alarm
+    def sound_alarm(self,audio_location):
+        pygame.mixer.music.load(audio_location)
+        pygame.mixer.music.play(-1)
+
+
+    # Function that stops the alarm from ringing
+    def stop_alarm(self):
+        pygame.mixer.music.stop()
+
+
+    # Main method. This is where the good stuff is
+    def main(self,win):
+        
+        # We start with no locked positions
+        locked_positions = {}
+        
+        # Create our grid
+        grid = self.create_grid(locked_positions)
+
+        # Variable that if true will switch the status of a block. It will stop it from falling
+        change_piece = False
+
+        # Generate the current and next piece.
+        current_piece = self.get_shape()
+        next_piece = self.get_shape()
+
+        # We have these variables to keep track of the blocks' falling speed
+        # and the player's cumulative score over the round
+        clock = pygame.time.Clock()
+        fall_time = 0
+        fall_speed = 0.3
+        level_time = 0
+        score = 0
+
+        # if the user ignores the warnings, we sound the alarms
+        if (user_ignored_warnings):
+            self.sound_alarm(alarm_audio_location)
+
+        run = True
+
+        # Main game loop that keeps the game running as long as run = True
+        while run:
+
+            
+            grid = self.create_grid(locked_positions)
+            fall_time += clock.get_rawtime()
+            level_time += clock.get_rawtime()
+            clock.tick()
+            
+            # Every five seconds the speed gets increased
+            if level_time/1000 > 5:
+                level_time = 0
+                if fall_speed > 0.12:
+                    fall_speed -= 0.005
+
+            if fall_time/1000 > fall_speed:
+                fall_time = 0
+                current_piece.y += 1
+
+                # If the piece hits the bottom of the grid or another piece, we lock it in place
+                if not(self.valid_space(current_piece, grid)) and current_piece.y > 0:
+                    current_piece.y -= 1
+                    change_piece = True
+                    ai_control = True
+
+            # We check for many events, keystrokes, and we have different things happening depending on input
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
                     run = False
-                    print("break")
-                if event.key == pygame.K_LEFT:
-                    current_piece.x -= 1
-                    if not(valid_space(current_piece, grid)):
-                        current_piece.x += 1
+                
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        run = False
+                        print("break")
+                if event.type == pygame.KEYDOWN:
+                    self.ai_control = False
+                if self.ai_control:
+                    print("ai controling")
+                if(not self.ai_control and event.type == pygame.KEYDOWN):
+                    if event.key == pygame.K_LEFT:
+                        current_piece.x -= 1
+                        if not(self.valid_space(current_piece, grid)):
+                            current_piece.x += 1
 
-                if event.key == pygame.K_RIGHT:
-                        current_piece.x += 1
-                        if not(valid_space(current_piece, grid)):
-                            current_piece.x -= 1
+                    if event.key == pygame.K_RIGHT:
+                            current_piece.x += 1
+                            if not(self.valid_space(current_piece, grid)):
+                                current_piece.x -= 1
+                        
+                    if event.key == pygame.K_DOWN:
+                            current_piece.y += 1
+                            if not(self.valid_space(current_piece, grid)):
+                                current_piece.y -= 1
+                        
+                    if event.key == pygame.K_UP:
+                            current_piece.rotation += 1
+                            if not(self.valid_space(current_piece, grid)):
+                                current_piece.rotation -= 1
                     
-                if event.key == pygame.K_DOWN:
-                        current_piece.y += 1
-                        if not(valid_space(current_piece, grid)):
-                            current_piece.y -= 1
-                    
-                if event.key == pygame.K_UP:
-                        current_piece.rotation += 1
-                        if not(valid_space(current_piece, grid)):
-                            current_piece.rotation -= 1
+
+                    # temporary keybindings to control and test the warning and alarm
+                    if event.key == pygame.K_1:
+                        global warning_visible
+                        warning_visible = True
+                        global user_inactive
+                        user_inactive = True
+
+                    if event.key == pygame.K_2:
+                        self.stop_warning()
+                    if event.key == pygame.K_9:
+                        self.sound_alarm(alarm_audio_location)
+                    if event.key == pygame.K_0:
+                        self.stop_alarm()
+
+                        
+
+
+            # Convert the current piece's shape format to a list of positions
+            shape_pos = self.convert_shape_format(current_piece)
+
+            # Iterate over each position in the shape
+            for i in range(len(shape_pos)):
+                # Get the x and y coordinates of the position
+                x, y = shape_pos[i]
+
+                # If the y coordinate is greater than -1 (i.e., the piece is not above the grid)
+                if y > -1:
+                    # Set the color of the grid at the position to the color of the current piece
+                    grid[y][x] = current_piece.color
+                
+            if change_piece:
+                for pos in shape_pos:
+                    p = (pos[0], pos[1])
+                    locked_positions[p] = current_piece.color
+                current_piece = next_piece
+                next_piece = self.get_shape()
+                change_piece = False
+
+                # 100 ppr for one row
+                # 300 ppr for two rows
+                # 500 ppr for three rows
+                # 800 ppr for four rows
+                #score += clear_rows(grid, locked_positions) * 10
+
+                rows_cleared = self.clear_rows(grid, locked_positions)
+                if rows_cleared > 3: 
+                    score += rows_cleared * 800
+                elif rows_cleared > 2:
+                    score += rows_cleared * 500
+                elif rows_cleared > 1: 
+                    score += rows_cleared * 300
+                else:
+                    score += rows_cleared * 100
                 
 
-                # temporary keybindings to control and test the warning and alarm
-                if event.key == pygame.K_1:
-                    global warning_visible
-                    warning_visible = True
-                    global user_inactive
-                    user_inactive = True
-
-                if event.key == pygame.K_2:
-                    stop_warning()
-                if event.key == pygame.K_9:
-                    sound_alarm(alarm_audio_location)
-                if event.key == pygame.K_0:
-                    stop_alarm()
-
-
-
-        # Convert the current piece's shape format to a list of positions
-        shape_pos = convert_shape_format(current_piece)
-
-        # Iterate over each position in the shape
-        for i in range(len(shape_pos)):
-            # Get the x and y coordinates of the position
-            x, y = shape_pos[i]
-
-            # If the y coordinate is greater than -1 (i.e., the piece is not above the grid)
-            if y > -1:
-                # Set the color of the grid at the position to the color of the current piece
-                grid[y][x] = current_piece.color
             
-        if change_piece:
-            for pos in shape_pos:
-                p = (pos[0], pos[1])
-                locked_positions[p] = current_piece.color
-            current_piece = next_piece
-            next_piece = get_shape()
-            change_piece = False
+            self.draw_window(win, grid, score)
+            self.draw_next_shape(next_piece, win)
+                
+                
+            if (user_inactive):
+                self.display_warning(win, warning_image_location)
 
-            # 100 ppr for one row
-            # 300 ppr for two rows
-            # 500 ppr for three rows
-            # 800 ppr for four rows
-            #score += clear_rows(grid, locked_positions) * 10
+            pygame.display.flip()
 
-            rows_cleared = clear_rows(grid, locked_positions)
-            if rows_cleared > 3: 
-                score += rows_cleared * 800
-            elif rows_cleared > 2:
-                score += rows_cleared * 500
-            elif rows_cleared > 1: 
-                score += rows_cleared * 300
-            else:
-                score += rows_cleared * 100
-            
-
-        
-        draw_window(win, grid, score)
-        draw_next_shape(next_piece, win)
-            
-            
-        if (user_inactive):
-            display_warning(win, warning_image_location)
-
-        pygame.display.flip()
-
-        # every iteration, we check if the user has lost the game
-        # if he loses, we end the game and display GAME OVER
-        if check_lost(locked_positions):
-            draw_text_middle(win, "GAME OVER", 80, (255, 255, 255))
-            pygame.display.update()
-            pygame.time.delay(2000)
-            run = False
-
-
-
-def main_menu(win):
-    run = True
-
-    font = pygame.font.SysFont('Tahoma', 40, bold = True)
-    # Define button dimensions for "PLAY"
-    play_label = font.render("PLAY", 1, (255, 255, 255))
-    play_x = top_left_x + play_width / 2 - (play_label.get_width() / 2)
-    play_y = top_left_y + play_height / 2 - (play_label.get_height() / 2) - 100
-    play_button = pygame.Rect(play_x - 20, play_y - 10, play_label.get_width() + 40, play_label.get_height() + 20)
-
-    # Define button dimensions for "CHECK AI LOGS" (optional)
-    ai_label = font.render("CHECK AI LOGS", 1, (255, 255, 255))
-    ai_x = top_left_x + play_width / 2 - (ai_label.get_width() / 2)
-    ai_y = top_left_y + play_height / 2 - (ai_label.get_height() / 2) - 25
-    ai_button = pygame.Rect(ai_x - 20, ai_y - 10, ai_label.get_width() + 40, ai_label.get_height() + 20)
-
-    # Main menu loop
-    while run:
-        win.fill((0, 0, 0))
-        draw_text_middle_up(win, 'Welcome to TETRIS', 60, (255, 255, 255))
-        
-       # Draw buttons
-        pygame.draw.rect(win, (50, 50, 50), play_button)  # Play button background
-        win.blit(play_label, (play_x, play_y))            # Play button text
-
-        pygame.draw.rect(win, (50, 50, 50), ai_button)    # AI Logs button background
-        win.blit(ai_label, (ai_x, ai_y))                  # AI Logs button text
-
-        pygame.display.update()
-
-
-
-        mouse_pos = pygame.mouse.get_pos()  # Get mouse position
-
-        # Check if the mouse is over the "PLAY" button and change the cursor
-        if play_button.collidepoint(mouse_pos):
-            pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_HAND)  # Hand cursor
-        elif ai_button.collidepoint(mouse_pos):
-            pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_HAND)  # Hand cursor
-        else:
-            pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_ARROW)  # Default arrow cursor
-
-        pygame.display.update()
-
-        # listening for events 
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
+            # every iteration, we check if the user has lost the game
+            # if he loses, we end the game and display GAME OVER
+            if self.check_lost(locked_positions):
+                self.draw_text_middle(win, "GAME OVER", 80, (255, 255, 255))
+                pygame.display.update()
+                pygame.time.delay(2000)
                 run = False
+
+
+
+    def main_menu(self,win):
+        run = True
+
+        font = pygame.font.SysFont('Tahoma', 40, bold = True)
+        # Define button dimensions for "PLAY"
+        play_label = font.render("PLAY", 1, (255, 255, 255))
+        play_x = top_left_x + play_width / 2 - (play_label.get_width() / 2)
+        play_y = top_left_y + play_height / 2 - (play_label.get_height() / 2) - 100
+        play_button = pygame.Rect(play_x - 20, play_y - 10, play_label.get_width() + 40, play_label.get_height() + 20)
+
+        # Define button dimensions for "CHECK AI LOGS" (optional)
+        ai_label = font.render("CHECK AI LOGS", 1, (255, 255, 255))
+        ai_x = top_left_x + play_width / 2 - (ai_label.get_width() / 2)
+        ai_y = top_left_y + play_height / 2 - (ai_label.get_height() / 2) - 25
+        ai_button = pygame.Rect(ai_x - 20, ai_y - 10, ai_label.get_width() + 40, ai_label.get_height() + 20)
+
+        # Main menu loop
+        while run:
+            win.fill((0, 0, 0))
+            self.draw_text_middle_up(win, 'Welcome to TETRIS', 60, (255, 255, 255))
             
-            if event.type == pygame.MOUSEBUTTONDOWN:  # Check for mouse click
-                mouse_pos = pygame.mouse.get_pos()  # Get mouse position
-                if play_button.collidepoint(mouse_pos):  # Check if "PLAY" button is clicked
-                    main(win)  # Start the game
-                elif ai_button.collidepoint(mouse_pos):  # Check if "CHECK AI LOGS" button is clicked
-                    print("AI Logs button clicked!")  # Placeholder for AI Logs functionality
-            
-    
-    # If we make it here, it means player is done, we quit
-    pygame.display.quit()
-    
+        # Draw buttons
+            pygame.draw.rect(win, (50, 50, 50), play_button)  # Play button background
+            win.blit(play_label, (play_x, play_y))            # Play button text
+
+            pygame.draw.rect(win, (50, 50, 50), ai_button)    # AI Logs button background
+            win.blit(ai_label, (ai_x, ai_y))                  # AI Logs button text
+
+            pygame.display.update()
+
+
+
+            mouse_pos = pygame.mouse.get_pos()  # Get mouse position
+
+            # Check if the mouse is over the "PLAY" button and change the cursor
+            if play_button.collidepoint(mouse_pos):
+                pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_HAND)  # Hand cursor
+            elif ai_button.collidepoint(mouse_pos):
+                pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_HAND)  # Hand cursor
+            else:
+                pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_ARROW)  # Default arrow cursor
+
+            pygame.display.update()
+
+            # listening for events 
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    run = False
+                
+                if event.type == pygame.MOUSEBUTTONDOWN:  # Check for mouse click
+                    mouse_pos = pygame.mouse.get_pos()  # Get mouse position
+                    if play_button.collidepoint(mouse_pos):  # Check if "PLAY" button is clicked
+                        self.main(win)  # Start the game
+                    elif ai_button.collidepoint(mouse_pos):  # Check if "CHECK AI LOGS" button is clicked
+                        print("AI Logs button clicked!")  # Placeholder for AI Logs functionality
+                
+        
+        # If we make it here, it means player is done, we quit
+        pygame.display.quit()
+        
 
 # Initialize the window, the caption, and we START
 win = pygame.display.set_mode((screen_width, screen_height))
+game = TetrisGame(win,screen_width,screen_height,play_height,play_height)
 pygame.display.set_caption('TETRIS')
-main_menu(win)
+game.main_menu(win)
