@@ -18,13 +18,11 @@ class Agent:
         self.epsilon = 80  # Randomness of the machine
         self.gamma = 0.9  # Discount rate (should be smaller than 1)
         self.memory = deque(maxlen=MAX_MEMORY)  # Stores AI data
-        self.model = Linear_QNet(8, 15, 4)
+        self.model = Linear_QNet(8, 256, 4)
         self.trainer = Qtrainer(self.model, lr=LR, gamma=self.gamma)
         self.current_piece = None
-        self.grid = {}
 
     def set_state(self, game):
-        self.grid = game.grid
         self.current_piece = game.current_piece
         line_cleared = game.total_rows_cleared
         print(self.current_piece)
@@ -61,46 +59,45 @@ class Agent:
 
         return final_move
 
-    def train(self):
-        plot_scores = []
-        plot_mean_score = []
-        total_score = 0
-        best_score = 0
+def train():
+    plot_scores = []
+    plot_mean_score = []
+    total_score = 0
+    best_score = 0
 
-        #globals imported here
-        screen_width = 800
-        screen_height = 700
-        play_width = 300    # 300 // 10  gives 30 width per block
-        play_height = 600   # 600 // 20 gives 30 height per block
-        block_size = 30
-        win = pygame.display.set_mode((screen_width, screen_height))
+    #globals imported here
+    screen_width = 800
+    screen_height = 700
+    play_width = 300    # 300 // 10  gives 30 width per block
+    play_height = 600   # 600 // 20 gives 30 height per block
+    block_size = 30
 
-        game = TetrisGameTrain(win,screen_width,screen_height,play_width,play_height)
+    game = TetrisGameTrain()
+    agent = Agent()
+    while True:
+
+        print("birds and 911")
+        state_old = agent.set_state(game)
+
+        final_move = agent.get_action(state_old)
+
+        #reward, done, score = game.play_step(final_move)
+        new_state = agent.set_state(game)
+
+        agent.train_short_memory(state_old, final_move, game.reward, new_state, game.run)
+        agent.remember(state_old, final_move, game.reward, new_state, game.run)
         
-        while True:
-            print("birds and 911")
-            state_old = self.set_state(game)
+        if not game.run:
 
-            final_move = self.get_action(state_old)
+            agent.n_game += 1
+            agent.train_long_memory()
 
-            #reward, done, score = game.play_step(final_move)
-            new_state = self.set_state(game)
+            if game.score > best_score:
+                best_score = agent.score
+                agent.model.save()
 
-            self.train_short_memory(state_old, final_move, game.reward, new_state, game.run)
-            self.remember(state_old, final_move, game.reward, new_state, game.run)
-            
-            if game.run:
-                game.main()
-                self.n_game += 1
-                self.train_long_memory()
-
-                if self.score > best_score:
-                    best_score = self.score
-                    self.model.save()
-
-                print(f'Game {self.n_game}, Score {self.score}, Best Score {best_score}')
+            print(f'Game {agent.n_game}, Score {game.score}, Best Score {best_score}')
 
 
 if __name__ == '__main__':
-    agent = Agent()
-    agent.train()
+    train()

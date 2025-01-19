@@ -193,12 +193,14 @@ class Piece(object):
         return [self.x,self.y, self.index ,self.rotation]
 
 class TetrisGameTrain:
-    def __init__(self,win,screen_width,screen_height,play_width,play_height):
-        self.win = win
+    def __init__(self,screen_width=800,screen_height=700,play_width=300,play_height=600):
         self.screen_width = screen_width
         self.screen_height = screen_height
         self.play_width = play_width
         self.play_height = play_height
+        self.win = pygame.display.set_mode((screen_width, screen_height))
+        self.display = pygame.display.set_mode((self.screen_width,self.screen_height))
+        pygame.display.set_caption('TETRIS')
         self.locked_positions = {}
         self.grid = self.create_grid(self.locked_positions)
         self.current_piece = self.get_shape().get_stats()
@@ -208,7 +210,7 @@ class TetrisGameTrain:
         self.level_time = 0
         self.score = 0
         self.running = True
-        self.ai_control = False
+        self.ai_control = True
         self.reward = 0
         self.run = None
         self.total_rows_cleared = 0
@@ -587,14 +589,11 @@ class TetrisGameTrain:
                 fall_time = 0
                 self.current_piece.y += 1
 
-                # If the piece hits the bottom of the grid or another piece, we lock it in place
+                # If the piece hits the bottom of the grid or another piece, we lock it in place, gives control back to the ai
                 if not(self.valid_space(self.current_piece, grid)) and self.current_piece.y > 0:
                     self.current_piece.y -= 1
                     change_piece = True
-                    ai_control = True
-
-            if self.ai_control:
-                print("ai controling")
+                    self.ai_control = True
             # We check for many events, keystrokes, and we have different things happening depending on input
 
             for event in pygame.event.get():
@@ -607,8 +606,8 @@ class TetrisGameTrain:
                         
                 if event.type == pygame.KEYDOWN:
                     self.ai_control = False
-                #if self.ai_control:
-                 #   self.play_step(self,agent.action)
+                if self.ai_control:
+                    self.play_step(self,agent.action)
                 if(not self.ai_control and event.type == pygame.KEYDOWN):
                     if event.key == pygame.K_LEFT:
                         self.current_piece.x -= 1
@@ -709,13 +708,3 @@ class TetrisGameTrain:
                 pygame.time.delay(2000)
                 self.reward -= 100
                 run = False
-
-
-
-    
-
-# Initialize the window, the caption, and we START
-win = pygame.display.set_mode((screen_width, screen_height))
-game = TetrisGameTrain(win,screen_width,screen_height,play_height,play_height)
-pygame.display.set_caption('TETRIS')
-#game.main_menu(win)
