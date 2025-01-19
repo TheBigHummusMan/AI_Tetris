@@ -1,8 +1,11 @@
 import pygame
 import argparse, os, shutil, numpy, torch, random
 from collections import deque
+
+from torch import dtype
+
 import game
-from game import TetrisGame
+from game import TetrisGameTrain
 from model import Linear_QNet, Qtrainer
 
 MAX_MEMORY = 100_000
@@ -17,13 +20,15 @@ class Agent:
         self.memory = deque(maxlen=MAX_MEMORY)  # Stores AI data
         self.model = Linear_QNet(5, 11, 4)
         self.trainer = Qtrainer(self.model, lr=LR, gamma=self.gamma)
-        #self.current_piece = None
-        #self.grid = {}
+        self.current_piece = None
+        self.grid = {}
 
     def set_state(self, game):
         self.grid = game.grid
-        self.current_piece = game
-        state = [game.current_piece[0], game.current_piece[1], game.current_piece[2], game.current_piece[3],game.grid]
+        self.current_piece = game.current_piece
+        line_cleared = game.total_rows_cleared
+        print(self.current_piece)
+        state = [line_cleared, game.get_number_of_holes(), game.get_bumpiness(), game.get_total_height()] + self.current_piece
         return state
 
     def remember(self, state, action, reward, next_state, done):
@@ -49,7 +54,7 @@ class Agent:
         
         else:
             # state
-            state0 = torch.tensor(0, dtype=torch.float)
+            state0 = torch.tensor(state, dtype = torch.float)
             prediction = self.model(state0)
             move = torch.argmax(prediction).item()
             final_move[move] = 1
@@ -70,7 +75,7 @@ class Agent:
         block_size = 30
         win = pygame.display.set_mode((screen_width, screen_height))
 
-        game = TetrisGame(win,screen_width,screen_height,play_width,play_height)
+        game = TetrisGameTrain(win,screen_width,screen_height,play_width,play_height)
         
         while True:
             print("birds and 911")

@@ -209,6 +209,7 @@ class TetrisGameTrain:
         self.ai_control = False
         self.reward = 0
         self.run = None
+        self.total_rows_cleared = 0
 
 
     # This function creates a grid, the dictionnary 'locked_positions' to store the positions of the pieces 
@@ -225,8 +226,62 @@ class TetrisGameTrain:
                 if (j, i) in locked_positions:
                     c = locked_positions[(j, i)]
                     grid[i][j] = c
-        
+
         return grid
+
+    def get_number_of_holes(self):
+        holes = 0  # Initialize the hole counter
+
+        # Iterate through each column of the grid
+        for col in range(len(self.grid[0])):
+            found_filled_block = False  # Track if a filled block has been found in the column
+            for row in range(len(self.grid)):
+                if self.grid[row][col] != (0, 0, 0):  # If the cell is not empty
+                    found_filled_block = True
+                elif found_filled_block:  # If the cell is empty but there is a filled block above it
+                    holes += 1
+
+        return holes
+
+    def get_total_height(self):
+        """
+        Calculates the total height of the grid based on locked positions.
+
+        Returns:
+            total_height (int): The sum of column heights.
+        """
+        heights = [0] * 10  # Initialize heights for each column (10 columns in the grid)
+
+        # Calculate column heights
+        for x in range(10):  # Iterate over columns
+            for y in range(20):  # Iterate over rows from top to bottom
+                if self.grid[y][x] != (0, 0, 0):  # If the cell is not empty
+                    heights[x] = 20 - y  # Calculate height (20 - y because y=0 is the top)
+                    break  # Stop after finding the first block in the column
+
+        # Calculate total height
+        total_height = sum(heights)
+        return total_height
+
+    def get_bumpiness(self):
+        """
+        Calculates the bumpiness of the grid based on locked positions.
+
+        Returns:
+            bumpiness (int): The sum of absolute differences in height between adjacent columns.
+        """
+        heights = [0] * 10  # Initialize heights for each column (10 columns in the grid)
+
+        # Calculate column heights
+        for x in range(10):  # Iterate over columns
+            for y in range(20):  # Iterate over rows from top to bottom
+                if self.grid[y][x] != (0, 0, 0):  # If the cell is not empty
+                    heights[x] = 20 - y  # Calculate height (20 - y because y=0 is the top)
+                    break  # Stop after finding the first block in the column
+
+        # Calculate bumpiness
+        bumpiness = sum(abs(heights[i] - heights[i + 1]) for i in range(len(heights) - 1))
+        return bumpiness
 
     # Function that simply generates a shape and returns it
     def get_shape(self): 
@@ -492,7 +547,7 @@ class TetrisGameTrain:
         change_piece = False
 
         # Generate the current and next piece.
-        current_piece = self.get_shape()
+        self.current_piece = self.get_shape()
         next_piece = self.get_shape()
 
         # We have these variables to keep track of the blocks' falling speed
@@ -526,11 +581,11 @@ class TetrisGameTrain:
 
             if fall_time/1000 > fall_speed:
                 fall_time = 0
-                current_piece.y += 1
+                self.current_piece.y += 1
 
                 # If the piece hits the bottom of the grid or another piece, we lock it in place
-                if not(self.valid_space(current_piece, grid)) and current_piece.y > 0:
-                    current_piece.y -= 1
+                if not(self.valid_space(self.current_piece, grid)) and self.current_piece.y > 0:
+                    self.current_piece.y -= 1
                     change_piece = True
                     ai_control = True
 
@@ -552,24 +607,24 @@ class TetrisGameTrain:
                 #    self.play_step(self,agent.action)
                 if(not self.ai_control and event.type == pygame.KEYDOWN):
                     if event.key == pygame.K_LEFT:
-                        current_piece.x -= 1
-                        if not(self.valid_space(current_piece, grid)):
-                            current_piece.x += 1
+                        self.current_piece.x -= 1
+                        if not(self.valid_space(self.current_piece, grid)):
+                            self.current_piece.x += 1
 
                     if event.key == pygame.K_RIGHT:
-                            current_piece.x += 1
-                            if not(self.valid_space(current_piece, grid)):
-                                current_piece.x -= 1
+                            self.current_piece.x += 1
+                            if not(self.valid_space(self.current_piece, grid)):
+                                self.current_piece.x -= 1
                         
                     if event.key == pygame.K_DOWN:
-                            current_piece.y += 1
-                            if not(self.valid_space(current_piece, grid)):
-                                current_piece.y -= 1
+                            self.current_piece.y += 1
+                            if not(self.valid_space(self.current_piece, grid)):
+                                self.current_piece.y -= 1
                         
                     if event.key == pygame.K_UP:
-                            current_piece.rotation += 1
-                            if not(self.valid_space(current_piece, grid)):
-                                current_piece.rotation -= 1
+                            self.current_piece.rotation += 1
+                            if not(self.valid_space(self.current_piece, grid)):
+                                self.current_piece.rotation -= 1
                     
 
                     # temporary keybindings to control and test the warning and alarm
@@ -590,7 +645,7 @@ class TetrisGameTrain:
 
 
             # Convert the current piece's shape format to a list of positions
-            shape_pos = self.convert_shape_format(current_piece)
+            shape_pos = self.convert_shape_format(self.current_piece)
 
             # Iterate over each position in the shape
             for i in range(len(shape_pos)):
@@ -600,13 +655,13 @@ class TetrisGameTrain:
                 # If the y coordinate is greater than -1 (i.e., the piece is not above the grid)
                 if y > -1:
                     # Set the color of the grid at the position to the color of the current piece
-                    grid[y][x] = current_piece.color
+                    grid[y][x] = self.current_piece.color
                 
             if change_piece:
                 for pos in shape_pos:
                     p = (pos[0], pos[1])
-                    locked_positions[p] = current_piece.color
-                current_piece = next_piece
+                    locked_positions[p] = self.current_piece.color
+                self.current_piece = next_piece
                 next_piece = self.get_shape()
                 change_piece = False
 
@@ -617,6 +672,7 @@ class TetrisGameTrain:
                 #score += clear_rows(grid, locked_positions) * 10
 
                 rows_cleared = self.clear_rows(grid, locked_positions)
+                self.total_rows_cleared += rows_cleared
                 if rows_cleared > 3: 
                     self.reward+=10
                     score += rows_cleared * 800
