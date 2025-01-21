@@ -27,8 +27,10 @@ class Agent:
         # there are 8 important data for the game state, number of cleared lines, number of holes, the bunpiness of the board, the total board height, the pices x and y coordinates, the shape of the pices and its rotation
         self.current_piece = game.current_piece.get_stats()
         line_cleared = game.total_rows_cleared
-        print(self.current_piece)
+        print("current piece stats :",self.current_piece)
         state = [line_cleared, game.get_number_of_holes(), game.get_bumpiness(), game.get_total_height()] + self.current_piece
+        print("\n line_cleared, number of holes, bumpiness, total height, current piece stats: x, y, shape, rotation")
+        print(state)
         return state
 
     def remember(self, state, action, reward, next_state, done):
@@ -75,13 +77,13 @@ def train():
         print(final_move, "ai ing")
 
         reward, done, score = game.play_step(final_move)
-        game.main(game.win)
+        #game.main(game.win)
 
         new_state = agent.get_state(game)
 
         agent.train_short_memory(state_old, final_move, reward, new_state, done)
         agent.remember(state_old, final_move, reward, new_state, done)
-        time.sleep(2)
+        #time.sleep(2)
         if  not game.run:
             game.reset()
             agent.n_game += 1
