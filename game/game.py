@@ -589,85 +589,84 @@ class TetrisGameTrain:
         run = True
 
         # Main game loop that keeps the game running as long as run = True
-        while run:
-            grid = self.create_grid(locked_positions)
-            fall_time += clock.get_rawtime()
-            level_time += clock.get_rawtime()
-            clock.tick()
-            self.current_piece_stat = self.current_piece.get_stats()
+        grid = self.create_grid(locked_positions)
+        fall_time += clock.get_rawtime()
+        level_time += clock.get_rawtime()
+        clock.tick()
+        self.current_piece_stat = self.current_piece.get_stats()
+        
+        # Every five seconds the speed gets increased
+        if level_time/1000 > 5:
+            level_time = 0
+            if fall_speed > 0.12:
+                fall_speed -= 0.005
+
+        if fall_time/1000 > fall_speed:
+            fall_time = 0
+            self.current_piece.y += 1
+
+            # If the piece hits the bottom of the grid or another piece, we lock it in place, gives control back to the ai
+            if not(self.valid_space(self.current_piece, grid)) and self.current_piece.y > 0:
+                self.current_piece.y -= 1
+                change_piece = True
+                self.ai_control = True
+
+        # Convert the current piece's shape format to a list of positions
+        shape_pos = self.convert_shape_format(self.current_piece)
+
+        # Iterate over each position in the shape
+        for i in range(len(shape_pos)):
+            # Get the x and y coordinates of the position
+            x, y = shape_pos[i]
+
+            # If the y coordinate is greater than -1 (i.e., the piece is not above the grid)
+            if y > -1:
+                # Set the color of the grid at the position to the color of the current piece
+                grid[y][x] = self.current_piece.color
             
-            # Every five seconds the speed gets increased
-            if level_time/1000 > 5:
-                level_time = 0
-                if fall_speed > 0.12:
-                    fall_speed -= 0.005
+        if change_piece:
+            for pos in shape_pos:
+                p = (pos[0], pos[1])
+                locked_positions[p] = self.current_piece.color
+            self.current_piece = next_piece
+            next_piece = self.get_shape()
+            change_piece = False
 
-            if fall_time/1000 > fall_speed:
-                fall_time = 0
-                self.current_piece.y += 1
+            # 100 ppr for one row
+            # 300 ppr for two rows
+            # 500 ppr for three rows
+            # 800 ppr for four rows
+            #score += clear_rows(grid, locked_positions) * 10
 
-                # If the piece hits the bottom of the grid or another piece, we lock it in place, gives control back to the ai
-                if not(self.valid_space(self.current_piece, grid)) and self.current_piece.y > 0:
-                    self.current_piece.y -= 1
-                    change_piece = True
-                    self.ai_control = True
-    
-            # Convert the current piece's shape format to a list of positions
-            shape_pos = self.convert_shape_format(self.current_piece)
-
-            # Iterate over each position in the shape
-            for i in range(len(shape_pos)):
-                # Get the x and y coordinates of the position
-                x, y = shape_pos[i]
-
-                # If the y coordinate is greater than -1 (i.e., the piece is not above the grid)
-                if y > -1:
-                    # Set the color of the grid at the position to the color of the current piece
-                    grid[y][x] = self.current_piece.color
-                
-            if change_piece:
-                for pos in shape_pos:
-                    p = (pos[0], pos[1])
-                    locked_positions[p] = self.current_piece.color
-                self.current_piece = next_piece
-                next_piece = self.get_shape()
-                change_piece = False
-
-                # 100 ppr for one row
-                # 300 ppr for two rows
-                # 500 ppr for three rows
-                # 800 ppr for four rows
-                #score += clear_rows(grid, locked_positions) * 10
-
-                rows_cleared = self.clear_rows(grid, locked_positions)
-                self.total_rows_cleared += rows_cleared
-                if rows_cleared > 3: 
-                    self.reward+=10
-                    score += rows_cleared * 800
-                elif rows_cleared > 2:
-                    self.reward+=7
-                    score += rows_cleared * 500
-                elif rows_cleared > 1:
-                    self.reward+=4 
-                    score += rows_cleared * 300
-                else:
-                    self.reward+=2
-                    score += rows_cleared * 100
-                
-
+            rows_cleared = self.clear_rows(grid, locked_positions)
+            self.total_rows_cleared += rows_cleared
+            if rows_cleared > 3: 
+                self.reward+=10
+                score += rows_cleared * 800
+            elif rows_cleared > 2:
+                self.reward+=7
+                score += rows_cleared * 500
+            elif rows_cleared > 1:
+                self.reward+=4 
+                score += rows_cleared * 300
+            else:
+                self.reward+=2
+                score += rows_cleared * 100
             
-            self.draw_window(win, grid, score)
-            self.draw_next_shape(next_piece, win)
+
+        
+        self.draw_window(win, grid, score)
+        self.draw_next_shape(next_piece, win)
+        pygame.display.update()
+
+
+        #pygame.display.flip()
+
+        # every iteration, we check if the user has lost the game
+        # if he loses, we end the game and display GAME OVER
+        if self.check_lost(locked_positions):
+            self.draw_text_middle(win, "GAME OVER", 80, (255, 255, 255))
             pygame.display.update()
-
-
-            #pygame.display.flip()
-
-            # every iteration, we check if the user has lost the game
-            # if he loses, we end the game and display GAME OVER
-            if self.check_lost(locked_positions):
-                self.draw_text_middle(win, "GAME OVER", 80, (255, 255, 255))
-                pygame.display.update()
-                pygame.time.delay(2000)
-                self.reward -= 100
-                run = False
+            pygame.time.delay(2000)
+            self.reward -= 100
+            run = False
