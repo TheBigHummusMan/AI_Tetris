@@ -75,7 +75,7 @@ def train():
         print(final_move, "ai ing")
 
         reward, done, score = game.play_step(final_move)
-        game.main(game.win)
+        game.main()
 
         new_state = agent.get_state(game)
 

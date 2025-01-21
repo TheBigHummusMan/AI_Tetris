@@ -491,7 +491,7 @@ class TetrisGameTrain:
                 print('nothing')
             else:
                 print("how did you get here?")
-        self.draw_window(self.win,self.grid,self.score)
+        self.draw_window(self.grid,self.score)
         pygame.display.update()
         return self.reward, not self.run, self.score
             
@@ -524,7 +524,7 @@ class TetrisGameTrain:
         self.current_piece_stat = None
 
         # Optionally, redraw the screen
-        self.draw_window(self.win, self.grid, self.score)
+        self.draw_window(self.grid, self.score)
         pygame.display.update()
 
         print("Game has been reset.")
@@ -562,7 +562,7 @@ class TetrisGameTrain:
         self.draw_grid(surface, grid)
 
     # Main method. This is where the good stuff is
-    def main(self,win):
+    def main(self):
         
         # We start with no locked positions
         locked_positions = {}
@@ -655,8 +655,8 @@ class TetrisGameTrain:
             
 
         
-        self.draw_window(win, grid, score)
-        self.draw_next_shape(next_piece, win)
+        self.draw_window(grid, score)
+        self.draw_next_shape(next_piece)
         pygame.display.update()
 
 
@@ -665,7 +665,7 @@ class TetrisGameTrain:
         # every iteration, we check if the user has lost the game
         # if he loses, we end the game and display GAME OVER
         if self.check_lost(locked_positions):
-            self.draw_text_middle(win, "GAME OVER", 80, (255, 255, 255))
+            self.draw_text_middle("GAME OVER", 80, (255, 255, 255))
             pygame.display.update()
             pygame.time.delay(2000)
             self.reward -= 100
