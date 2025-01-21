@@ -437,8 +437,8 @@ class TetrisGameTrain:
 
 
     # Creating the whole window
-    def draw_window(self,surface, grid, score=0):
-        surface.fill((0, 0, 0))
+    def draw_window(self):
+        self.win.fill((0, 0, 0))
 
         pygame.font.init()
         font = pygame.font.SysFont('Tahoma', 60)
@@ -446,27 +446,27 @@ class TetrisGameTrain:
 
         # This draws the label we just created centered in the screen
         # The 30 at the end moves the label down 30 from the top 
-        surface.blit(label, (top_left_x + play_width/2 - (label.get_width()/2), 30))
+        self.win.blit(label, (top_left_x + play_width/2 - (label.get_width()/2), 30))
 
         # current score
         font = pygame.font.SysFont('Tahoma', 30)
-        label = font.render('Score: ' + str(score), 1, (255, 255, 255))
+        label = font.render('Score: ' + str(self.score), 1, (255, 255, 255))
 
         sx = top_left_x + play_width + 50
         sy = top_left_y + play_height/2 - 100
 
-        surface.blit(label, (sx + 0, sy - 280))
+        self.win.blit(label, (sx + 0, sy - 280))
 
-        for i in range(len(grid)):
-            for j in range(len(grid[i])):
+        for i in range(len(self.grid)):
+            for j in range(len(self.grid[i])):
                 # We draw the color (grid[i][j]) onto the surface, at the position we want
                 # toplefty + i*block_size is the true 'y' position, same thing for 'x'
                 # We then specify, the width and length of drawing, and the '0' means we fill the square (not a border)
-                pygame.draw.rect(surface, grid[i][j], (top_left_x + j*block_size, top_left_y + i*block_size, block_size, block_size), 0)
+                pygame.draw.rect(self.win, self.grid[i][j], (top_left_x + j*block_size, top_left_y + i*block_size, block_size, block_size), 0)
         
         
-        pygame.draw.rect(surface, (255, 0, 0), (top_left_x,top_left_y, play_width, play_height), 4)
-        self.draw_grid(surface, grid)
+        pygame.draw.rect(self.win, (255, 0, 0), (top_left_x,top_left_y, play_width, play_height), 4)
+        self.draw_grid(self.win, self.grid)
     
     
     def play_step(self,action):
@@ -491,7 +491,7 @@ class TetrisGameTrain:
                 print('nothing')
             else:
                 print("how did you get here?")
-        self.draw_window(self.win,self.grid,self.score)
+        self.draw_window()
         pygame.display.update()
         return self.reward, not self.run, self.score
             
@@ -524,43 +524,11 @@ class TetrisGameTrain:
         self.current_piece_stat = None
 
         # Optionally, redraw the screen
-        self.draw_window(self.win, self.grid, self.score)
+        self.draw_window()
         pygame.display.update()
 
         print("Game has been reset.")
     
-    def draw_window(self,surface, grid, score=0):
-        surface.fill((0, 0, 0))
-
-        pygame.font.init()
-        font = pygame.font.SysFont('Tahoma', 60)
-        label = font.render('Tetris', 1, (255, 255, 255))
-
-        # This draws the label we just created centered in the screen
-        # The 30 at the end moves the label down 30 from the top 
-        surface.blit(label, (top_left_x + play_width/2 - (label.get_width()/2), 30))
-
-        # current score
-        font = pygame.font.SysFont('Tahoma', 30)
-        label = font.render('Score: ' + str(score), 1, (255, 255, 255))
-
-        sx = top_left_x + play_width + 50
-        sy = top_left_y + play_height/2 - 100
-
-        surface.blit(label, (sx + 0, sy - 280))
-
-        for i in range(len(grid)):
-            for j in range(len(grid[i])):
-                # We draw the color (grid[i][j]) onto the surface, at the position we want
-                # toplefty + i*block_size is the true 'y' position, same thing for 'x'
-                # We then specify, the width and length of drawing, and the '0' means we fill the square (not a border)
-                pygame.draw.rect(surface, grid[i][j], (top_left_x + j*block_size, top_left_y + i*block_size, block_size, block_size), 0)
-        
-        
-        pygame.draw.rect(surface, (255, 0, 0), (top_left_x,top_left_y, play_width, play_height), 4)
-        pygame.display.update()
-        self.draw_grid(surface, grid)
-
     # Main method. This is where the good stuff is
     def main(self,win):
         
@@ -655,7 +623,7 @@ class TetrisGameTrain:
             
 
         
-        self.draw_window(win, grid, score)
+        self.draw_window()
         self.draw_next_shape(next_piece, win)
         pygame.display.update()
 
