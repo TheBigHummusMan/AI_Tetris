@@ -51,7 +51,7 @@ class Agent:
     def get_action(self, state):
         final_move = [0, 0, 0, 0]
         if random.randint(0, 200) < self.epsilon:
-            move = random.randint(0, 2)
+            move = random.randint(0, 3)
             final_move[move] = 1
         
         else:
@@ -77,7 +77,6 @@ def train():
         print(final_move, "ai ing")
 
         reward, done, score = game.play_step(final_move)
-        #game.main(game.win)
 
         new_state = agent.get_state(game)
 

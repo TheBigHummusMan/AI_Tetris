@@ -182,7 +182,7 @@ class Piece(object):
         self.rotation = 0
     def get_stats(self):
         #print([self.x,self.y, self.index ,self.rotation])
-        return [self.x,self.y, self.index ,self.rotation%4]
+        return [self.x,self.y, self.index ,self.rotation % 4]
 
 class TetrisGameTrain:
     def __init__(self,screen_width=800,screen_height=700,play_width=300,play_height=600):
@@ -233,6 +233,12 @@ class TetrisGameTrain:
         return grid
 
     def get_number_of_holes(self):
+        """
+        calculates the number of holes within the board
+
+        Returns:
+            an int number of holes
+        """
         holes = 0  # Initialize the hole counter
 
         # Iterate through each column of the grid
@@ -512,7 +518,7 @@ class TetrisGameTrain:
             self.current_piece.y += 1
 
             # If the piece hits the bottom of the grid or another piece, we lock it in place, gives control back to the ai
-            if not(self.valid_space(self.current_piece, grid)) and self.current_piece.y > 0:
+            if not(self.valid_space(self.current_piece, self.grid)) and self.current_piece.y > 0:
                 self.current_piece.y -= 1
                 self.change_piece = True
                 #self.ai_control = True
