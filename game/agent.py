@@ -60,8 +60,8 @@ class Agent:
             prediction = self.model(state0)
             move = torch.argmax(prediction).item()
             final_move[move] = 1
-
         return final_move
+
 
 def train():
 
@@ -82,7 +82,7 @@ def train():
 
         agent.train_short_memory(state_old, final_move, reward, new_state, done)
         agent.remember(state_old, final_move, reward, new_state, done)
-        #time.sleep(2)
+        time.sleep(0.2)
         if  not game.run:
             game.reset()
             agent.n_game += 1

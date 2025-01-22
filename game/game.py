@@ -505,6 +505,7 @@ class TetrisGameTrain:
             else:
                 print("how did you get here?")
 
+        self.current_piece.y += 1
 
         
         # Every five seconds the speed gets increased
@@ -534,7 +535,7 @@ class TetrisGameTrain:
             # If the y coordinate is greater than -1 (i.e., the piece is not above the grid)
             if y > -1:
                 # Set the color of the grid at the position to the color of the current piece
-                grid[y][x] = self.current_piece.color
+                self.grid[y][x] = self.current_piece.color
             
         if self.change_piece:
             for pos in shape_pos:
@@ -550,7 +551,7 @@ class TetrisGameTrain:
             # 800 ppr for four rows
             #score += clear_rows(grid, self.locked_positions) * 10
 
-            rows_cleared = self.clear_rows(grid, self.locked_positions)
+            rows_cleared = self.clear_rows(self.grid, self.locked_positions)
             self.total_rows_cleared += rows_cleared
             if rows_cleared > 3: 
                 self.reward+=10
