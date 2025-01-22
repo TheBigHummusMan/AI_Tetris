@@ -507,6 +507,10 @@ class TetrisGameTrain:
 
         self.current_piece.y += 1
 
+        self.grid = self.create_grid()
+        self.fall_time += self.clock.get_rawtime()
+        self.level_time += self.clock.get_rawtime()
+        self.clock.tick()
         
         # Every five seconds the speed gets increased
         if self.level_time/1000 > 5:
