@@ -505,8 +505,6 @@ class TetrisGameTrain:
             else:
                 print("how did you get here?")
 
-        self.current_piece.y += 1
-
         self.grid = self.create_grid()
         self.fall_time += self.clock.get_rawtime()
         self.level_time += self.clock.get_rawtime()
