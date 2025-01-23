@@ -580,7 +580,7 @@ class TetrisGameTrain:
         # every iteration, we check if the user has lost the game
         # if he loses, we end the game and display GAME OVER
         if self.check_lost(self.locked_positions):
-            self.draw_text_middle("GAME OVER", 80, (255, 255, 255))
+            #self.draw_text_middle("GAME OVER", 80, (255, 255, 255))
             pygame.display.update()
             pygame.time.delay(2000)
             self.reward -= 100
