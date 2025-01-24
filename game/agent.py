@@ -9,7 +9,7 @@ from game import TetrisGameTrain
 from model import Linear_QNet, Qtrainer
 
 MAX_MEMORY = 100_000
-BATCH_SIZE = 100
+BATCH_SIZE = 1
 LR = 0.001
 
 class Agent:
@@ -53,9 +53,11 @@ class Agent:
         if random.randint(0, 200) < self.epsilon:
             move = random.randint(0, 3)
             final_move[move] = 1
+            print("random move")
         
         else:
             # state
+            print("ai move")
             state0 = torch.tensor(state, dtype = torch.float)
             prediction = self.model(state0)
             move = torch.argmax(prediction).item()
@@ -70,7 +72,7 @@ def train():
     game = TetrisGameTrain()
     agent = Agent()
     while True:
-        print("AI thinking")
+        #print("AI thinking")
         state_old = agent.get_state(game)
 
         final_move = agent.get_action(state_old)
@@ -82,7 +84,7 @@ def train():
 
         agent.train_short_memory(state_old, final_move, reward, new_state, done)
         agent.remember(state_old, final_move, reward, new_state, done)
-        time.sleep(0.2)
+        #time.sleep(0.2)
         if  not game.run:
             game.reset()
             agent.n_game += 1

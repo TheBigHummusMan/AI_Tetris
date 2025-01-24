@@ -504,6 +504,10 @@ class TetrisGameTrain:
                 print('nothing')
             else:
                 print("how did you get here?")
+                
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                run = False
 
         self.grid = self.create_grid()
         self.fall_time += self.clock.get_rawtime()
@@ -524,7 +528,7 @@ class TetrisGameTrain:
             if not(self.valid_space(self.current_piece, self.grid)) and self.current_piece.y > 0:
                 self.current_piece.y -= 1
                 self.change_piece = True
-                #self.ai_control = True
+                self.ai_control = True
 
         # Convert the current piece's shape format to a list of positions
         shape_pos = self.convert_shape_format(self.current_piece)
